@@ -35,6 +35,7 @@ RUN cd /osrm-src \
  && make -j4\
  && mv /osrm-src/profiles/car.lua /osrm-build/profile.lua \
  && mv /osrm-src/profiles/lib/ /osrm-build/lib \
+ && mv /osrm-src/docker_test/osrm-backend-docker/docker-entrypoint.sh / \
  && echo "disk=/tmp/stxxl,25000,syscall" > .stxxl \
  && rm -rf /osrm-src
 
@@ -45,7 +46,7 @@ RUN apt-get clean \
 
 # Publish --------------------------------
 
-COPY docker-entrypoint.sh /
+#COPY docker-entrypoint.sh /
 RUN chmod +x /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
