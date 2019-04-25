@@ -14,10 +14,9 @@ RUN apt-get -y update && apt-get install -y \
     libtbb-dev \
     libxml2-dev \
     libzip-dev \
-    lua5.1 \
-    liblua5.1-0-dev \
+    lua5.2 \
+    liblua5.2-dev \
     libluabind-dev \
-    libluajit-5.1-dev \
     pkg-config
 
 RUN mkdir -p /osrm-build \
