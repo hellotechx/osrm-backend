@@ -35,7 +35,7 @@ RUN cd /osrm-src \
  && make -j4\
  && mv /osrm-src/profiles/car.lua /osrm-build/profile.lua \
  && mv /osrm-src/profiles/lib/ /osrm-build/lib \
- && mv /osrm-src/docker_test/osrm-backend-docker/docker-entrypoint.sh / \
+ && mv /osrm-src/build/* /osrm-build/ \
  && echo "disk=/tmp/stxxl,25000,syscall" > .stxxl \
  && rm -rf /osrm-src
 
@@ -44,9 +44,26 @@ RUN cd /osrm-src \
 RUN apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
-# Publish --------------------------------
+# Multistage build 
+FROM debian:stretch-slim as runstage
 
-#COPY docker-entrypoint.sh /
+RUN apt-get update \
+     && apt-get install -y --no-install-recommends \
+     libboost-program-options1.62.0 \
+     libboost-regex1.62.0 \
+     libboost-date-time1.62.0 \
+     libboost-chrono1.62.0 \
+     libboost-filesystem1.62.0 \
+     libboost-iostreams1.62.0 \
+     libboost-thread1.62.0 expat liblua5.2-0 libtbb2 \
+     && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /osrm-build /osrm-build
+COPY --from=builder /osrm-data /osrm-data
+
+WORKDIR /osrm-build
+
+# Publish --------------------------------
+COPY ./docker_test/osrm-backend-docker/docker-entrypoint.sh /
 RUN chmod +x /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
