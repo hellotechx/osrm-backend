@@ -55,7 +55,7 @@ RUN apt-get update \
      libboost-chrono1.62.0 \
      libboost-filesystem1.62.0 \
      libboost-iostreams1.62.0 \
-     libboost-thread1.62.0 expat liblua5.2-0 libtbb2 \
+     libboost-thread1.62.0 expat liblua5.2-0 libtbb2 curl \
      && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /osrm-build /osrm-build
 COPY --from=builder /osrm-data /osrm-data
