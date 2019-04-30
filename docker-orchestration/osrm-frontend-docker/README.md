@@ -2,7 +2,7 @@
 
 OSRM frontend image has been built from github's code.
 
-<img src="osrm-frontend.png" alt="osrm-frontend" width="600"/>
+<img src="osrm-frontend-backend-arch.png" alt="osrm-frontend-backend-arch" width="600"/>
 
 
 ## Build image
@@ -32,3 +32,4 @@ Visit OSRM front end with
 ```bash
 http://ipaddress:8080
 ```
+<img src="osrm-frontend.png" alt="osrm-frontend" width="600"/>
