@@ -21,7 +21,7 @@ Notes:
 ```bash
 docker run -it osrm-local-test /bin/bash
 ```
-- If the container already running and you want to auire control you could
+- If the container already running and you want to aquire control you could
 ```
 exec -i -t container_id /bin/bash
 ```
@@ -33,7 +33,7 @@ Run following command
 docker run -d -p 5000:5000 -v /Users/ngxuser/osrm-data/ca:/osrm-data --name osrm-api osrm-local-test:latest osrm California "http://download.geofabrik.de/north-america/us/california-latest.osm.pbf"
 ```
 - It would take for a while to run the container up for the first time, about 20 ~ 40 minutes.  The time has been used for building osrm data.  
-  Once data is generated, will be record in local host
+  Once data is generated, it will be record in local host
 - OSRM data would be generated in /osrm-data in docker container, which has been mapped to /Users/ngxuser/osrm-data/ca on local host
 - When server is started, to test it you get into container and try following command for CA data
 ```bash
