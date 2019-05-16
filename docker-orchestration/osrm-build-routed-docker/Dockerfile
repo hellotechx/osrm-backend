@@ -63,7 +63,7 @@ COPY --from=builder /osrm-data /osrm-data
 WORKDIR /osrm-build
 
 # Publish --------------------------------
-COPY ./docker_test/osrm-backend-docker/docker-entrypoint.sh /
+COPY ./docker-orchestration/osrm-build-routed-docker/docker-entrypoint.sh /
 RUN chmod +x /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
