@@ -13,6 +13,7 @@
 
 #include <tbb/atomic.h>
 
+#include <bitset>
 #include <array>
 #include <cmath>
 #include <vector>
