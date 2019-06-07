@@ -211,7 +211,6 @@ template <typename T, std::size_t Bits, storage::Ownership Ownership> class Pack
         {
             word_offset[element_index] = offset / WORD_BITS;
             offset += Bits;
-            std::cout << "### word_offset[element_index]"<< std::bitset<64>(word_offset[element_index]) << std::endl;
         }
 
         return word_offset;
@@ -487,15 +486,9 @@ template <typename T, std::size_t Bits, storage::Ownership Ownership> class Pack
 
     inline InternalIndex get_internal_index(const std::size_t index) const
     {
-        //std::cout << "+++ BLOCK_WORDS = " << BLOCK_WORDS << " BLOCK_ELEMENTS = " << BLOCK_ELEMENTS << " WORD_BITS =  " << WORD_BITS << std::endl;
         const auto block_offset = BLOCK_WORDS * (index / BLOCK_ELEMENTS);
         const std::uint8_t element_index = index % BLOCK_ELEMENTS;
         const auto lower_word_index = block_offset + word_offset[element_index];
-        
-        std::cout << "$$$ get_internal_index() index = " << index << " ";
-        std::cout << "block_offset = " << block_offset << " ";
-        std::cout << "element_index = " << std::bitset<64>(element_index) << " ";
-        std::cout << "lower_word_index = " << lower_word_index << " " << std::endl;
 
         return InternalIndex{lower_word_index, element_index};
     }
