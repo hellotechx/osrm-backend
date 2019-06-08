@@ -84,8 +84,6 @@ template <typename WordT, typename T>
 inline WordT set_lower_value(WordT word, WordT mask, std::uint8_t offset, T value)
 {
     static_assert(std::is_unsigned<WordT>::value, "Only unsigned word types supported for now.");
-    std::cout << "+++set_lower_value() {word, mask, offset, value }" << word << "," << std::bitset<64>(mask) << "," << std::bitset<8>(offset) << "," << value  << std::endl;
-    std::cout << "result is " << ((word & ~mask) | ((static_cast<WordT>(value) << offset) & mask)) <<"(" << std::bitset<64>(((word & ~mask) | ((static_cast<WordT>(value) << offset) & mask)))<< ")"<< std::endl;
     return (word & ~mask) | ((static_cast<WordT>(value) << offset) & mask);
 }
 
@@ -93,8 +91,6 @@ template <typename WordT, typename T>
 inline WordT set_upper_value(WordT word, WordT mask, std::uint8_t offset, T value)
 {
     static_assert(std::is_unsigned<WordT>::value, "Only unsigned word types supported for now.");
-    std::cout << "---set_upper_value() {word, mask, offset, value }" << word << "," << std::bitset<64>(mask) << "," << std::bitset<8>(offset) << "," << value  << std::endl;
-    std::cout << "result is " << ((word & ~mask) | ((static_cast<WordT>(value) >> offset) & mask)) << "(" << std::bitset<64>((word & ~mask) | ((static_cast<WordT>(value) >> offset) & mask))<< ")"<< std::endl;
     return (word & ~mask) | ((static_cast<WordT>(value) >> offset) & mask);
 }
 
@@ -130,7 +126,6 @@ template <typename T, std::size_t Bits, storage::Ownership Ownership> class Pack
             auto local_offset = offset % WORD_BITS;
             lower_mask[element_index] = mask << local_offset;
             offset += Bits;
-            std::cout << "### lower_mask[element_index]" << std::bitset<64>(lower_mask[element_index]) << std::endl;
         }
 
         return lower_mask;
@@ -149,12 +144,11 @@ template <typename T, std::size_t Bits, storage::Ownership Ownership> class Pack
             if (local_offset + Bits > WORD_BITS)
             {
                 upper_mask[element_index] = mask >> (WORD_BITS - local_offset);
-                std::cout << "### upper_mask[element_index]" << std::bitset<64>(upper_mask[element_index]) << std::endl;
             }
             else
             {
                 upper_mask[element_index] = 0;
-                std::cout << "### upper_mask[element_index]" << std::bitset<64>(upper_mask[element_index]) << std::endl;
+                //std::cout << "### upper_mask[element_index]" << std::bitset<64>(upper_mask[element_index]) << std::endl;
             }
             offset += Bits;
         }
@@ -172,7 +166,7 @@ template <typename T, std::size_t Bits, storage::Ownership Ownership> class Pack
             auto local_offset = offset % WORD_BITS;
             lower_offset[element_index] = local_offset;
             offset += Bits;
-            std::cout << "### lower_offset[element_index]" << std::bitset<64>(lower_offset[element_index]) << std::endl;
+            //std::cout << "### lower_offset[element_index]" << std::bitset<64>(lower_offset[element_index]) << std::endl;
         }
 
         return lower_offset;
@@ -190,12 +184,12 @@ template <typename T, std::size_t Bits, storage::Ownership Ownership> class Pack
             if (local_offset + Bits > WORD_BITS)
             {
                 upper_offset[element_index] = WORD_BITS - local_offset;
-                std::cout << "### upper_offset[element_index]" << std::bitset<64>(upper_offset[element_index]) << std::endl;
+                //std::cout << "### upper_offset[element_index]" << std::bitset<64>(upper_offset[element_index]) << std::endl;
             }
             else
             {
                 upper_offset[element_index] = Bits;
-                std::cout << "### upper_offset[element_index]" << std::bitset<64>(upper_offset[element_index]) << std::endl;
+                //std::cout << "### upper_offset[element_index]" << std::bitset<64>(upper_offset[element_index]) << std::endl;
             }
             offset += Bits;
         }
