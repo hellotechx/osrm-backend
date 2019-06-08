@@ -550,7 +550,7 @@ template <typename T, std::size_t Bits, storage::Ownership Ownership> class Pack
                                                        upper_mask[internal_index.element],
                                                        upper_offset[internal_index.element],
                                                        value);
-            if (new_upper_word != local_upper_word) std::cout << "^^^ new_upper_word = " << new_upper_word << std::endl;
+            //if (new_upper_word != local_upper_word) std::cout << "^^^ new_upper_word = " << new_upper_word << std::endl;
         } while (tbb::internal::as_atomic(upper_word)
                      .compare_and_swap(new_upper_word, local_upper_word) != local_upper_word);
     }
