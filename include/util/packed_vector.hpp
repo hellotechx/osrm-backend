@@ -528,9 +528,7 @@ template <typename T, std::size_t Bits, storage::Ownership Ownership> class Pack
 
         auto &lower_word = vec[internal_index.lower_word];
         auto &upper_word = vec[internal_index.lower_word + 1];
-        std::cout << "@@@ set_value() internal_index (" << internal_index.lower_word << "," << std::bitset<8>(internal_index.element) << "), value = " << value;
-        std::cout << " lower_word = " << lower_word << "  upper_word = " << upper_word << std::endl;
-        
+    
         // Lock-free update of the lower word
         WordT local_lower_word, new_lower_word;
         do
