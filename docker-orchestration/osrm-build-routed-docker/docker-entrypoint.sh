@@ -14,6 +14,7 @@ if [ "$1" = 'osrm' ]; then
     fi
     ./osrm-extract $DATA_PATH/$2.osm.pbf -p profile.lua
     ./osrm-partition $DATA_PATH/$2.osrm
+    ./osrm-customize $DATA_PATH/$2.osrm
   fi
 
   ./osrm-routed $DATA_PATH/$2.osrm -a MLD --max-table-size 8000 &
