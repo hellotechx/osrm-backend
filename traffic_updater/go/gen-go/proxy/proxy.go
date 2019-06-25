@@ -25,8 +25,8 @@ var _ = bytes.Equal
 //  - Speed
 //  - TrafficLevel
 type Flow struct {
-  FromId int64 `thrift:"fromId,1,required" db:"fromId" json:"fromId"`
-  ToId int64 `thrift:"toId,2,required" db:"toId" json:"toId"`
+  FromId *int64 `thrift:"fromId,1" db:"fromId" json:"fromId,omitempty"`
+  ToId *int64 `thrift:"toId,2" db:"toId" json:"toId,omitempty"`
   WayId int64 `thrift:"wayId,3,required" db:"wayId" json:"wayId"`
   Speed float64 `thrift:"speed,4,required" db:"speed" json:"speed"`
   TrafficLevel int32 `thrift:"trafficLevel,5,required" db:"trafficLevel" json:"trafficLevel"`
@@ -36,13 +36,19 @@ func NewFlow() *Flow {
   return &Flow{}
 }
 
-
+var Flow_FromId_DEFAULT int64
 func (p *Flow) GetFromId() int64 {
-  return p.FromId
+  if !p.IsSetFromId() {
+    return Flow_FromId_DEFAULT
+  }
+return *p.FromId
 }
-
+var Flow_ToId_DEFAULT int64
 func (p *Flow) GetToId() int64 {
-  return p.ToId
+  if !p.IsSetToId() {
+    return Flow_ToId_DEFAULT
+  }
+return *p.ToId
 }
 
 func (p *Flow) GetWayId() int64 {
@@ -56,13 +62,19 @@ func (p *Flow) GetSpeed() float64 {
 func (p *Flow) GetTrafficLevel() int32 {
   return p.TrafficLevel
 }
+func (p *Flow) IsSetFromId() bool {
+  return p.FromId != nil
+}
+
+func (p *Flow) IsSetToId() bool {
+  return p.ToId != nil
+}
+
 func (p *Flow) Read(iprot thrift.TProtocol) error {
   if _, err := iprot.ReadStructBegin(); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
   }
 
-  var issetFromId bool = false;
-  var issetToId bool = false;
   var issetWayId bool = false;
   var issetSpeed bool = false;
   var issetTrafficLevel bool = false;
@@ -79,7 +91,6 @@ func (p *Flow) Read(iprot thrift.TProtocol) error {
         if err := p.ReadField1(iprot); err != nil {
           return err
         }
-        issetFromId = true
       } else {
         if err := iprot.Skip(fieldTypeId); err != nil {
           return err
@@ -90,7 +101,6 @@ func (p *Flow) Read(iprot thrift.TProtocol) error {
         if err := p.ReadField2(iprot); err != nil {
           return err
         }
-        issetToId = true
       } else {
         if err := iprot.Skip(fieldTypeId); err != nil {
           return err
@@ -141,12 +151,6 @@ func (p *Flow) Read(iprot thrift.TProtocol) error {
   if err := iprot.ReadStructEnd(); err != nil {
     return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
   }
-  if !issetFromId{
-    return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field FromId is not set"));
-  }
-  if !issetToId{
-    return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field ToId is not set"));
-  }
   if !issetWayId{
     return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field WayId is not set"));
   }
@@ -163,7 +167,7 @@ func (p *Flow)  ReadField1(iprot thrift.TProtocol) error {
   if v, err := iprot.ReadI64(); err != nil {
   return thrift.PrependError("error reading field 1: ", err)
 } else {
-  p.FromId = v
+  p.FromId = &v
 }
   return nil
 }
@@ -172,7 +176,7 @@ func (p *Flow)  ReadField2(iprot thrift.TProtocol) error {
   if v, err := iprot.ReadI64(); err != nil {
   return thrift.PrependError("error reading field 2: ", err)
 } else {
-  p.ToId = v
+  p.ToId = &v
 }
   return nil
 }
@@ -222,22 +226,26 @@ func (p *Flow) Write(oprot thrift.TProtocol) error {
 }
 
 func (p *Flow) writeField1(oprot thrift.TProtocol) (err error) {
-  if err := oprot.WriteFieldBegin("fromId", thrift.I64, 1); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:fromId: ", p), err) }
-  if err := oprot.WriteI64(int64(p.FromId)); err != nil {
-  return thrift.PrependError(fmt.Sprintf("%T.fromId (1) field write error: ", p), err) }
-  if err := oprot.WriteFieldEnd(); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:fromId: ", p), err) }
+  if p.IsSetFromId() {
+    if err := oprot.WriteFieldBegin("fromId", thrift.I64, 1); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:fromId: ", p), err) }
+    if err := oprot.WriteI64(int64(*p.FromId)); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T.fromId (1) field write error: ", p), err) }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 1:fromId: ", p), err) }
+  }
   return err
 }
 
 func (p *Flow) writeField2(oprot thrift.TProtocol) (err error) {
-  if err := oprot.WriteFieldBegin("toId", thrift.I64, 2); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:toId: ", p), err) }
-  if err := oprot.WriteI64(int64(p.ToId)); err != nil {
-  return thrift.PrependError(fmt.Sprintf("%T.toId (2) field write error: ", p), err) }
-  if err := oprot.WriteFieldEnd(); err != nil {
-    return thrift.PrependError(fmt.Sprintf("%T write field end error 2:toId: ", p), err) }
+  if p.IsSetToId() {
+    if err := oprot.WriteFieldBegin("toId", thrift.I64, 2); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:toId: ", p), err) }
+    if err := oprot.WriteI64(int64(*p.ToId)); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T.toId (2) field write error: ", p), err) }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 2:toId: ", p), err) }
+  }
   return err
 }
 

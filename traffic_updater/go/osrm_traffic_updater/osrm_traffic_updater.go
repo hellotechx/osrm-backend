@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/Telenav/osrm-backend/traffic_updater/go/gen-go/proxy"
 	"github.com/apache/thrift/lib/go/thrift"
@@ -26,8 +25,8 @@ func init() {
 	flag.StringVar(&flags.csvFile, "f", "traffic.csv", "OSRM traffic csv file")
 	flag.BoolVar(&flags.highPrecision, "d", false, "use high precision speeds, i.e. decimal")
 }
-
-func flows2dic(flows []*proxy.Flow, m map[uint64]int) {
+4
+func flows2map(flows []*proxy.Flow, m map[uint64]int) {
 	for _, flow := range flows {
 		wayid := (uint64)(flow.WayId)
 		m[wayid] = int(flow.Speed)
@@ -68,7 +67,6 @@ func main() {
 	client := proxy.NewProxyServiceClient(thrift.NewTStandardClient(protocol, protocol))
 
 	// get flows
-	startTime := time.Now()
 	fmt.Println("getting flows")
 	var defaultCtx = context.Background()
 	flows, err := client.GetAllFlows(defaultCtx)
@@ -79,7 +77,7 @@ func main() {
 	fmt.Printf("got flows count: %d\n", len(flows))
 
 	wayid2speed := make(map[uint64]int)
-	flows2dic(flows, wayid2speed)
+	flows2map(flows, wayid2speed)
 
-	GenerateSpeedTable(wayid2speed, flags.mappingFile, flags.csvFile)
+	generateSpeedTable(wayid2speed, flags.mappingFile, flags.csvFile)
 }

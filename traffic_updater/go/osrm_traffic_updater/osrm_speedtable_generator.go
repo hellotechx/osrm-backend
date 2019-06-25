@@ -15,7 +15,7 @@ import (
 //       Write data into more compressed format(parquet)
 //       Multiple go routine for convert()
 
-func GenerateSpeedTable(wayid2speed map[uint64]int, way2nodeidsPath string, target string) {
+func generateSpeedTable(wayid2speed map[uint64]int, way2nodeidsPath string, target string) {
 	startTime := time.Now()
 
 	// format is: wayid, nodeid, nodeid, nodeid...
