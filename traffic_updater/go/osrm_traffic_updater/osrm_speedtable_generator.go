@@ -56,7 +56,7 @@ func convert(source <-chan string, sink chan<- string, wayid2speed map[uint64]in
 	for str := range source {
 		elements := strings.Split(str, ",")
 		if len(elements) < 3 {
-			fmt.Printf("Invalid string %s in %s\n", str, flags.idsmapping)
+			fmt.Printf("Invalid string %s in wayid2nodeids mapping file\n", str)
 			continue
 		}
 
