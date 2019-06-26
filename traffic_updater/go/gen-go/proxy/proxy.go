@@ -291,6 +291,9 @@ type ProxyService interface {
   // Parameters:
   //  - WayId
   GetFlowById(ctx context.Context, wayId int64) (r *Flow, err error)
+  // Parameters:
+  //  - WayIds
+  GetFlowsByIds(ctx context.Context, wayIds []int64) (r []*Flow, err error)
 }
 
 type ProxyServiceClient struct {
@@ -339,6 +342,18 @@ func (p *ProxyServiceClient) GetFlowById(ctx context.Context, wayId int64) (r *F
   return _result3.GetSuccess(), nil
 }
 
+// Parameters:
+//  - WayIds
+func (p *ProxyServiceClient) GetFlowsByIds(ctx context.Context, wayIds []int64) (r []*Flow, err error) {
+  var _args4 ProxyServiceGetFlowsByIdsArgs
+  _args4.WayIds = wayIds
+  var _result5 ProxyServiceGetFlowsByIdsResult
+  if err = p.Client_().Call(ctx, "getFlowsByIds", &_args4, &_result5); err != nil {
+    return
+  }
+  return _result5.GetSuccess(), nil
+}
+
 type ProxyServiceProcessor struct {
   processorMap map[string]thrift.TProcessorFunction
   handler ProxyService
@@ -359,10 +374,11 @@ func (p *ProxyServiceProcessor) ProcessorMap() map[string]thrift.TProcessorFunct
 
 func NewProxyServiceProcessor(handler ProxyService) *ProxyServiceProcessor {
 
-  self4 := &ProxyServiceProcessor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}
-  self4.processorMap["getAllFlows"] = &proxyServiceProcessorGetAllFlows{handler:handler}
-  self4.processorMap["getFlowById"] = &proxyServiceProcessorGetFlowById{handler:handler}
-return self4
+  self6 := &ProxyServiceProcessor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}
+  self6.processorMap["getAllFlows"] = &proxyServiceProcessorGetAllFlows{handler:handler}
+  self6.processorMap["getFlowById"] = &proxyServiceProcessorGetFlowById{handler:handler}
+  self6.processorMap["getFlowsByIds"] = &proxyServiceProcessorGetFlowsByIds{handler:handler}
+return self6
 }
 
 func (p *ProxyServiceProcessor) Process(ctx context.Context, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
@@ -373,12 +389,12 @@ func (p *ProxyServiceProcessor) Process(ctx context.Context, iprot, oprot thrift
   }
   iprot.Skip(thrift.STRUCT)
   iprot.ReadMessageEnd()
-  x5 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function " + name)
+  x7 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function " + name)
   oprot.WriteMessageBegin(name, thrift.EXCEPTION, seqId)
-  x5.Write(oprot)
+  x7.Write(oprot)
   oprot.WriteMessageEnd()
   oprot.Flush(ctx)
-  return false, x5
+  return false, x7
 
 }
 
@@ -461,6 +477,54 @@ var retval *Flow
     result.Success = retval
 }
   if err2 = oprot.WriteMessageBegin("getFlowById", thrift.REPLY, seqId); err2 != nil {
+    err = err2
+  }
+  if err2 = result.Write(oprot); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+    err = err2
+  }
+  if err2 = oprot.Flush(ctx); err == nil && err2 != nil {
+    err = err2
+  }
+  if err != nil {
+    return
+  }
+  return true, err
+}
+
+type proxyServiceProcessorGetFlowsByIds struct {
+  handler ProxyService
+}
+
+func (p *proxyServiceProcessorGetFlowsByIds) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+  args := ProxyServiceGetFlowsByIdsArgs{}
+  if err = args.Read(iprot); err != nil {
+    iprot.ReadMessageEnd()
+    x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+    oprot.WriteMessageBegin("getFlowsByIds", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush(ctx)
+    return false, err
+  }
+
+  iprot.ReadMessageEnd()
+  result := ProxyServiceGetFlowsByIdsResult{}
+var retval []*Flow
+  var err2 error
+  if retval, err2 = p.handler.GetFlowsByIds(ctx, args.WayIds); err2 != nil {
+    x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing getFlowsByIds: " + err2.Error())
+    oprot.WriteMessageBegin("getFlowsByIds", thrift.EXCEPTION, seqId)
+    x.Write(oprot)
+    oprot.WriteMessageEnd()
+    oprot.Flush(ctx)
+    return true, err2
+  } else {
+    result.Success = retval
+}
+  if err2 = oprot.WriteMessageBegin("getFlowsByIds", thrift.REPLY, seqId); err2 != nil {
     err = err2
   }
   if err2 = result.Write(oprot); err == nil && err2 != nil {
@@ -597,11 +661,11 @@ func (p *ProxyServiceGetAllFlowsResult)  ReadField0(iprot thrift.TProtocol) erro
   tSlice := make([]*Flow, 0, size)
   p.Success =  tSlice
   for i := 0; i < size; i ++ {
-    _elem6 := &Flow{}
-    if err := _elem6.Read(iprot); err != nil {
-      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem6), err)
+    _elem8 := &Flow{}
+    if err := _elem8.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem8), err)
     }
-    p.Success = append(p.Success, _elem6)
+    p.Success = append(p.Success, _elem8)
   }
   if err := iprot.ReadListEnd(); err != nil {
     return thrift.PrependError("error reading list end: ", err)
@@ -839,6 +903,236 @@ func (p *ProxyServiceGetFlowByIdResult) String() string {
     return "<nil>"
   }
   return fmt.Sprintf("ProxyServiceGetFlowByIdResult(%+v)", *p)
+}
+
+// Attributes:
+//  - WayIds
+type ProxyServiceGetFlowsByIdsArgs struct {
+  WayIds []int64 `thrift:"wayIds,1" db:"wayIds" json:"wayIds"`
+}
+
+func NewProxyServiceGetFlowsByIdsArgs() *ProxyServiceGetFlowsByIdsArgs {
+  return &ProxyServiceGetFlowsByIdsArgs{}
+}
+
+
+func (p *ProxyServiceGetFlowsByIdsArgs) GetWayIds() []int64 {
+  return p.WayIds
+}
+func (p *ProxyServiceGetFlowsByIdsArgs) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if fieldTypeId == thrift.LIST {
+        if err := p.ReadField1(iprot); err != nil {
+          return err
+        }
+      } else {
+        if err := iprot.Skip(fieldTypeId); err != nil {
+          return err
+        }
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *ProxyServiceGetFlowsByIdsArgs)  ReadField1(iprot thrift.TProtocol) error {
+  _, size, err := iprot.ReadListBegin()
+  if err != nil {
+    return thrift.PrependError("error reading list begin: ", err)
+  }
+  tSlice := make([]int64, 0, size)
+  p.WayIds =  tSlice
+  for i := 0; i < size; i ++ {
+var _elem9 int64
+    if v, err := iprot.ReadI64(); err != nil {
+    return thrift.PrependError("error reading field 0: ", err)
+} else {
+    _elem9 = v
+}
+    p.WayIds = append(p.WayIds, _elem9)
+  }
+  if err := iprot.ReadListEnd(); err != nil {
+    return thrift.PrependError("error reading list end: ", err)
+  }
+  return nil
+}
+
+func (p *ProxyServiceGetFlowsByIdsArgs) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("getFlowsByIds_args"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *ProxyServiceGetFlowsByIdsArgs) writeField1(oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin("wayIds", thrift.LIST, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:wayIds: ", p), err) }
+  if err := oprot.WriteListBegin(thrift.I64, len(p.WayIds)); err != nil {
+    return thrift.PrependError("error writing list begin: ", err)
+  }
+  for _, v := range p.WayIds {
+    if err := oprot.WriteI64(int64(v)); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err) }
+  }
+  if err := oprot.WriteListEnd(); err != nil {
+    return thrift.PrependError("error writing list end: ", err)
+  }
+  if err := oprot.WriteFieldEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:wayIds: ", p), err) }
+  return err
+}
+
+func (p *ProxyServiceGetFlowsByIdsArgs) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("ProxyServiceGetFlowsByIdsArgs(%+v)", *p)
+}
+
+// Attributes:
+//  - Success
+type ProxyServiceGetFlowsByIdsResult struct {
+  Success []*Flow `thrift:"success,0" db:"success" json:"success,omitempty"`
+}
+
+func NewProxyServiceGetFlowsByIdsResult() *ProxyServiceGetFlowsByIdsResult {
+  return &ProxyServiceGetFlowsByIdsResult{}
+}
+
+var ProxyServiceGetFlowsByIdsResult_Success_DEFAULT []*Flow
+
+func (p *ProxyServiceGetFlowsByIdsResult) GetSuccess() []*Flow {
+  return p.Success
+}
+func (p *ProxyServiceGetFlowsByIdsResult) IsSetSuccess() bool {
+  return p.Success != nil
+}
+
+func (p *ProxyServiceGetFlowsByIdsResult) Read(iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin()
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 0:
+      if fieldTypeId == thrift.LIST {
+        if err := p.ReadField0(iprot); err != nil {
+          return err
+        }
+      } else {
+        if err := iprot.Skip(fieldTypeId); err != nil {
+          return err
+        }
+      }
+    default:
+      if err := iprot.Skip(fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *ProxyServiceGetFlowsByIdsResult)  ReadField0(iprot thrift.TProtocol) error {
+  _, size, err := iprot.ReadListBegin()
+  if err != nil {
+    return thrift.PrependError("error reading list begin: ", err)
+  }
+  tSlice := make([]*Flow, 0, size)
+  p.Success =  tSlice
+  for i := 0; i < size; i ++ {
+    _elem10 := &Flow{}
+    if err := _elem10.Read(iprot); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", _elem10), err)
+    }
+    p.Success = append(p.Success, _elem10)
+  }
+  if err := iprot.ReadListEnd(); err != nil {
+    return thrift.PrependError("error reading list end: ", err)
+  }
+  return nil
+}
+
+func (p *ProxyServiceGetFlowsByIdsResult) Write(oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin("getFlowsByIds_result"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField0(oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *ProxyServiceGetFlowsByIdsResult) writeField0(oprot thrift.TProtocol) (err error) {
+  if p.IsSetSuccess() {
+    if err := oprot.WriteFieldBegin("success", thrift.LIST, 0); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err) }
+    if err := oprot.WriteListBegin(thrift.STRUCT, len(p.Success)); err != nil {
+      return thrift.PrependError("error writing list begin: ", err)
+    }
+    for _, v := range p.Success {
+      if err := v.Write(oprot); err != nil {
+        return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", v), err)
+      }
+    }
+    if err := oprot.WriteListEnd(); err != nil {
+      return thrift.PrependError("error writing list end: ", err)
+    }
+    if err := oprot.WriteFieldEnd(); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err) }
+  }
+  return err
+}
+
+func (p *ProxyServiceGetFlowsByIdsResult) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("ProxyServiceGetFlowsByIdsResult(%+v)", *p)
 }
 
 
