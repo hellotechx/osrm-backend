@@ -25,7 +25,7 @@ func init() {
 	flag.StringVar(&flags.csvFile, "f", "traffic.csv", "OSRM traffic csv file")
 	flag.BoolVar(&flags.highPrecision, "d", false, "use high precision speeds, i.e. decimal")
 }
-4
+
 func flows2map(flows []*proxy.Flow, m map[uint64]int) {
 	for _, flow := range flows {
 		wayid := (uint64)(flow.WayId)
