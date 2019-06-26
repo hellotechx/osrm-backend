@@ -10,11 +10,10 @@ import (
 	"time"
 )
 
-// todo: Integrate with Jay's code
-//       Statistic to avoid unmatched element
+// todo:
 //       Write data into more compressed format(parquet)
+//       Statistic to avoid unmatched element
 //       Multiple go routine for convert()
-
 func generateSpeedTable(wayid2speed map[uint64]int, way2nodeidsPath string, target string) {
 	startTime := time.Now()
 
@@ -78,7 +77,14 @@ func convert(source <-chan string, sink chan<- string, wayid2speed map[uint64]in
 					fmt.Printf("#Error during decoding nodeid, row = %v\n", elements)
 					continue
 				}
-				s := fmt.Sprintf("%d,%d,%d\n", n1, n2, speed)
+
+				var s string
+				if speed >= 0 {
+					s = fmt.Sprintf("%d,%d,%d\n", n1, n2, speed)
+				} else {
+					s = fmt.Sprintf("%d,%d,%d\n", n2, n1, -speed)
+				}
+
 				sink <- s
 			}
 		}

@@ -4,16 +4,34 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 )
 
-func TestGenerateSpeedTable(*testing.T) {
+func TestGenerateSpeedTable(t *testing.T) {
 	wayid2speed := make(map[uint64]int)
 	loadMockTraffic("./testdata/mock-traffic.csv", wayid2speed)
 	generateSpeedTable(wayid2speed, "./testdata/id-mapping.csv", "./testdata/target.csv")
+
+	b1, err1 := ioutil.ReadFile("./testdata/target.csv")
+	if err1 != nil {
+		fmt.Print(err1)
+	}
+	str1 := string(b1)
+
+	b2, err2 := ioutil.ReadFile("./testdata/expect.csv")
+	if err2 != nil {
+		fmt.Print(err2)
+	}
+	str2 := string(b2)
+
+	if strings.Compare(str1, str2) != 0 {
+		t.Error("TestGenerateSpeedTable failed\n")
+	}
 }
 
 func loadMockTraffic(trafficPath string, wayid2speed map[uint64]int) {
