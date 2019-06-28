@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/Telenav/osrm-backend/traffic_updater/go/gen-go/proxy"
 	"github.com/apache/thrift/lib/go/thrift"
@@ -67,6 +68,7 @@ func main() {
 	client := proxy.NewProxyServiceClient(thrift.NewTStandardClient(protocol, protocol))
 
 	// get flows
+	breforeGetFlowsTime := time.Now()
 	fmt.Println("getting flows")
 	var defaultCtx = context.Background()
 	flows, err := client.GetAllFlows(defaultCtx)
@@ -74,10 +76,15 @@ func main() {
 		fmt.Println("get flows failed:", err)
 		return
 	}
-	fmt.Printf("got flows count: %d\n", len(flows))
+	afterGotFlowTime := time.Now()
+	fmt.Printf("got flows count: %d, time used: %f seconds\n", len(flows), afterGotFlowTime.Sub(breforeGetFlowsTime).Seconds())
 
 	wayid2speed := make(map[uint64]int)
 	flows2map(flows, wayid2speed)
+	afterFlows2MapTime := time.Now()
+	fmt.Printf("flows2map time used: %f seconds\n", afterFlows2MapTime.Sub(afterGotFlowTime).Seconds())
 
 	generateSpeedTable(wayid2speed, flags.mappingFile, flags.csvFile)
+	afterGenerateSpeedTableTime := time.Now()
+	fmt.Printf("generateSpeedTable time used: %f seconds\n", afterGenerateSpeedTableTime.Sub(afterFlows2MapTime).Seconds())
 }
