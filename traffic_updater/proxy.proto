@@ -4,6 +4,8 @@ option java_multiple_files = true;
 option java_package = "com.telenav.traffic.grpc.proto";
 option java_outer_classname = "TrafficProxy";
 
+package proxy;
+
 service TrafficProxy {
   rpc GetFlows(TrafficRequest) returns (TrafficResponse) {}
   rpc GetFlowsStreaming(TrafficStreamingRequest) returns (stream TrafficStreamingResponse) {}
