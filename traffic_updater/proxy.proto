@@ -18,7 +18,7 @@ message TrafficSource {
 }
 
 message WayIdsStructure {
-  repeated sint64 wayId = 1;
+  repeated sint64 wayIds = 1;
 }
 
 message Flow {
@@ -28,7 +28,7 @@ message Flow {
 }
 
 message FlowsStructure {
-  repeated Flow flow = 1;
+  repeated Flow flows = 1;
 }
 
 
@@ -66,10 +66,7 @@ message TrafficStreamingRequest {
 }
 
 message TrafficStreamingResponse {
-  oneof FlowFields{
-    Flow flow = 3;
-    FlowsStructure flows = 4; 
-  }
+    FlowsStructure flows = 1; 
 }
 
 
