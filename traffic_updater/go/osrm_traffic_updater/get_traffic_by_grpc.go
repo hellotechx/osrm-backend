@@ -10,6 +10,17 @@ import (
 	"google.golang.org/grpc"
 )
 
+const (
+	proxyConnectionTimeout = 60 * time.Second
+	maxMsgSize             = 1024 * 1024 * 1024
+)
+
+func quickViewFlows(flows []*proxy.Flow, viewCount int) {
+	for i := 0; i < viewCount && i < len(flows); i++ {
+		fmt.Println(flows[i])
+	}
+}
+
 func getAllFlowsByGRPC(f trafficProxyFlags) ([]*proxy.Flow, error) {
 
 	startTime := time.Now()
@@ -20,15 +31,18 @@ func getAllFlowsByGRPC(f trafficProxyFlags) ([]*proxy.Flow, error) {
 	// make RPC client
 	targetServer := f.ip + ":" + strconv.Itoa(f.port)
 	fmt.Println("connect traffic proxy " + targetServer)
-	conn, err := grpc.Dial(targetServer, grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(1024*1024*1024)))
+	conn, err := grpc.Dial(targetServer, grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)))
 	if err != nil {
 		return nil, fmt.Errorf("fail to dial: %v", err)
 	}
 	defer conn.Close()
 
 	// prepare context
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), proxyConnectionTimeout)
 	defer cancel()
+
+	// new proxy client
+	client := proxy.NewTrafficProxyClient(conn)
 
 	// get flows
 	fmt.Println("getting flows")
@@ -40,7 +54,6 @@ func getAllFlowsByGRPC(f trafficProxyFlags) ([]*proxy.Flow, error) {
 	ways := new(proxy.TrafficRequest_All)
 	ways.All = true
 	req.WayIdFields = ways
-	client := proxy.NewTrafficProxyClient(conn)
 	resp, err := client.GetFlows(ctx, &req)
 	if err != nil {
 		return nil, fmt.Errorf("GetFlows failed, err: %v.\n", err)
@@ -49,5 +62,4 @@ func getAllFlowsByGRPC(f trafficProxyFlags) ([]*proxy.Flow, error) {
 		resp.GetCode(), resp.GetMsg(), len(resp.GetFlows().Flows))
 
 	return resp.GetFlows().Flows, nil
-
 }

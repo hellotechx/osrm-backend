@@ -25,9 +25,9 @@ func init() {
 	flag.IntVar(&flags.trafficProxyFlags.port, "p", 6666, "traffic proxy listening port")
 	flag.StringVar(&flags.trafficProxyFlags.ip, "c", "127.0.0.1", "traffic proxy ip address")
 	flag.StringVar(&flags.trafficProxyFlags.region, "region", "na", "region")
-	flag.StringVar(&flags.trafficProxyFlags.trafficProvider, "trafficprovider", "", "traffic data provider")
-	flag.StringVar(&flags.trafficProxyFlags.mapProvider, "mapprovider", "", "map data provider")
-	flag.StringVar(&flags.testMode, "testmode", "", "test mode, e.g. test_getallflows")
+	flag.StringVar(&flags.trafficProxyFlags.trafficProvider, "traffic", "", "traffic data provider")
+	flag.StringVar(&flags.trafficProxyFlags.mapProvider, "map", "", "map data provider")
+	flag.StringVar(&flags.testMode, "testmode", "", "test mode, e.g. grpc_get_all, ut_grpc_get_way")
 	flag.StringVar(&flags.mappingFile, "m", "wayid2nodeids.csv", "OSRM way id to node ids mapping table")
 	flag.StringVar(&flags.csvFile, "f", "traffic.csv", "OSRM traffic csv file")
 }
