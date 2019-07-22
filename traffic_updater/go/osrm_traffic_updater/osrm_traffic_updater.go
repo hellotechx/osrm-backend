@@ -6,20 +6,30 @@ import (
 	"time"
 )
 
+type trafficProxyFlags struct {
+	port            int
+	ip              string
+	region          string
+	trafficProvider string
+	mapProvider     string
+}
+
 var flags struct {
-	port          int
-	ip            string
-	mappingFile   string
-	csvFile       string
-	highPrecision bool
+	trafficProxyFlags trafficProxyFlags
+	testMode          string
+	mappingFile       string
+	csvFile           string
 }
 
 func init() {
-	flag.IntVar(&flags.port, "p", 6666, "traffic proxy listening port")
-	flag.StringVar(&flags.ip, "c", "127.0.0.1", "traffic proxy ip address")
+	flag.IntVar(&flags.trafficProxyFlags.port, "p", 6666, "traffic proxy listening port")
+	flag.StringVar(&flags.trafficProxyFlags.ip, "c", "127.0.0.1", "traffic proxy ip address")
+	flag.StringVar(&flags.trafficProxyFlags.region, "region", "na", "region")
+	flag.StringVar(&flags.trafficProxyFlags.trafficProvider, "trafficprovider", "", "traffic data provider")
+	flag.StringVar(&flags.trafficProxyFlags.mapProvider, "mapprovider", "", "map data provider")
+	flag.StringVar(&flags.testMode, "testmode", "", "test mode, e.g. test_getallflows")
 	flag.StringVar(&flags.mappingFile, "m", "wayid2nodeids.csv", "OSRM way id to node ids mapping table")
 	flag.StringVar(&flags.csvFile, "f", "traffic.csv", "OSRM traffic csv file")
-	flag.BoolVar(&flags.highPrecision, "d", false, "use high precision speeds, i.e. decimal")
 }
 
 const TASKNUM = 128
@@ -34,9 +44,24 @@ func main() {
 		fmt.Printf("Total processing time %f seconds\n", endTime.Sub(startTime).Seconds())
 	}()
 
+	if flags.testMode != "" {
+
+		flows, err := getAllFlowsByGRPC(flags.trafficProxyFlags)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		for i := 0; i < 10 && i < len(flows); i++ {
+			fmt.Println(flows[i])
+		}
+
+		// if test mode, always return after test run
+		return
+	}
+
 	isFlowDoneChan := make(chan bool, 1)
 	wayid2speed := make(map[int64]int)
-	go getTrafficFlow(flags.ip, flags.port, wayid2speed, isFlowDoneChan)
+	go getTrafficFlow(flags.trafficProxyFlags.ip, flags.trafficProxyFlags.port, wayid2speed, isFlowDoneChan)
 
 	var sources [TASKNUM]chan string
 	for i := range sources {
