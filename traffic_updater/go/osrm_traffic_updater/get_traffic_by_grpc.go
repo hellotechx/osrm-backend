@@ -91,6 +91,9 @@ func getFlowsByGRPCStreaming(f trafficProxyFlags, out chan<- []*proxy.Flow) erro
 	req.TrafficSource.Region = f.region
 	req.TrafficSource.TrafficProvider = f.trafficProvider
 	req.TrafficSource.MapProvider = f.mapProvider
+	req.StreamingRules = new(proxy.TrafficStreamingRequest_StreamingRules)
+	req.StreamingRules.MaxSize = 1000
+	req.StreamingRules.MaxTime = 1
 
 	stream, err := client.GetFlowsStreaming(ctx, &req)
 	if err != nil {
