@@ -78,15 +78,40 @@ func TestGetFlowsByGRPCStreaming(t *testing.T) {
 	}
 
 	flowsChan := make(chan []*proxy.Flow)
+
+	startTime := time.Now()
+	statisticsInterval := 120 //120 seconds
+	var totalFlowsCount, maxFlowsCount, minFlowsCount int64
+	var recvCount int
+	for flows := range flowsChan {
+		recvCount++
+
+		currFlowsCount := int64(len(flows))
+		totalFlowsCount += currFlowsCount
+		if currFlowsCount > maxFlowsCount {
+			maxFlowsCount = currFlowsCount
+		}
+		if currFlowsCount < minFlowsCount {
+			minFlowsCount = currFlowsCount
+		}
+
+		if time.Now().Sub(startTime).Seconds() >= float64(statisticsInterval) {
+			fmt.Printf("received flows from grpc streaming in %f seconds, recv count %d, total got flows count: %d, max per recv: %d, min per recv: %d\n",
+				time.Now().Sub(startTime).Seconds(), recvCount, totalFlowsCount, maxFlowsCount, minFlowsCount)
+			quickViewFlows(flows, 5)
+
+			recvCount = 0
+			totalFlowsCount = 0
+			maxFlowsCount = 0
+			minFlowsCount = 0
+			startTime = time.Now()
+		}
+	}
+
 	go func() {
 		err := getFlowsByGRPCStreaming(flags.trafficProxyFlags, flowsChan)
 		if err != nil {
 			t.Errorf("getFlowsByGRPCStreaming failed, err: %v", err)
 		}
 	}()
-
-	for flows := range flowsChan {
-		fmt.Printf("received flows from stream, got flows count: %d\n", len(flows))
-		quickViewFlows(flows, 5)
-	}
 }
