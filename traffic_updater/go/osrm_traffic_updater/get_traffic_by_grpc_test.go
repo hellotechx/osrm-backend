@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"testing"
 	"time"
@@ -79,6 +80,13 @@ func TestGetFlowsByGRPCStreaming(t *testing.T) {
 
 	flowsChan := make(chan []*proxy.Flow)
 
+	go func() {
+		err := getFlowsByGRPCStreaming(flags.trafficProxyFlags, flowsChan)
+		if err != nil {
+			t.Errorf("getFlowsByGRPCStreaming failed, err: %v", err)
+		}
+	}()
+
 	startTime := time.Now()
 	statisticsInterval := 120 //120 seconds
 	var totalFlowsCount, maxFlowsCount, minFlowsCount int64
@@ -96,7 +104,7 @@ func TestGetFlowsByGRPCStreaming(t *testing.T) {
 		}
 
 		if time.Now().Sub(startTime).Seconds() >= float64(statisticsInterval) {
-			fmt.Printf("received flows from grpc streaming in %f seconds, recv count %d, total got flows count: %d, max per recv: %d, min per recv: %d\n",
+			log.Printf("received flows from grpc streaming in %f seconds, recv count %d, total got flows count: %d, max per recv: %d, min per recv: %d\n",
 				time.Now().Sub(startTime).Seconds(), recvCount, totalFlowsCount, maxFlowsCount, minFlowsCount)
 			quickViewFlows(flows, 5)
 
@@ -107,11 +115,4 @@ func TestGetFlowsByGRPCStreaming(t *testing.T) {
 			startTime = time.Now()
 		}
 	}
-
-	go func() {
-		err := getFlowsByGRPCStreaming(flags.trafficProxyFlags, flowsChan)
-		if err != nil {
-			t.Errorf("getFlowsByGRPCStreaming failed, err: %v", err)
-		}
-	}()
 }
