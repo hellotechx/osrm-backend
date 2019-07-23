@@ -78,8 +78,7 @@ func getFlowsByGRPCStreaming(f trafficProxyFlags, out chan<- []*proxy.Flow) erro
 	defer conn.Close()
 
 	// prepare context
-	ctx, cancel := context.WithTimeout(context.Background(), proxyConnectionTimeout)
-	defer cancel()
+	ctx := context.Background()
 
 	// new proxy client
 	client := proxy.NewTrafficProxyClient(conn)
