@@ -12,6 +12,10 @@ import (
 )
 
 func BenchmarkGetAllFlowsByGRPC(b *testing.B) {
+	if testing.Short() {
+		b.Skip("skipping test in short mode.")
+	}
+
 	for i := 0; i < b.N; i++ {
 		flows, err := getAllFlowsByGRPC(flags.trafficProxyFlags)
 		if err != nil {
@@ -22,6 +26,9 @@ func BenchmarkGetAllFlowsByGRPC(b *testing.B) {
 }
 
 func BenchmarkGetSingleFlowEachTimeByGRPC(b *testing.B) {
+	if testing.Short() {
+		b.Skip("skipping test in short mode.")
+	}
 
 	// make RPC client
 	targetServer := flags.trafficProxyFlags.ip + ":" + strconv.Itoa(flags.trafficProxyFlags.port)
@@ -62,5 +69,24 @@ func BenchmarkGetSingleFlowEachTimeByGRPC(b *testing.B) {
 		if i == 0 { // print once
 			fmt.Println(resp.GetFlow())
 		}
+	}
+}
+
+func TestGetFlowsByGRPCStreaming(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	flowsChan := make(chan []*proxy.Flow)
+	go func() {
+		err := getFlowsByGRPCStreaming(flags.trafficProxyFlags, flowsChan)
+		if err != nil {
+			t.Errorf("getFlowsByGRPCStreaming failed, err: %v", err)
+		}
+	}()
+
+	for flows := range flowsChan {
+		fmt.Printf("received flows from stream, got flows count: %d\n", len(flows))
+		quickViewFlows(flows, 5)
 	}
 }

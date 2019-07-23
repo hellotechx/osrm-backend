@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"strconv"
 	"time"
 
@@ -56,10 +57,57 @@ func getAllFlowsByGRPC(f trafficProxyFlags) ([]*proxy.Flow, error) {
 	req.WayIdFields = ways
 	resp, err := client.GetFlows(ctx, &req)
 	if err != nil {
-		return nil, fmt.Errorf("GetFlows failed, err: %v.\n", err)
+		return nil, fmt.Errorf("GetFlows failed, err: %v", err)
 	}
 	fmt.Printf("GetFlows succeed, code: %d, msg: %s, got flows count: %d\n",
 		resp.GetCode(), resp.GetMsg(), len(resp.GetFlows().Flows))
 
 	return resp.GetFlows().Flows, nil
+}
+
+func getFlowsByGRPCStreaming(f trafficProxyFlags, out chan<- []*proxy.Flow) error {
+	defer close(out)
+
+	// make RPC client
+	targetServer := f.ip + ":" + strconv.Itoa(f.port)
+	fmt.Println("connect traffic proxy " + targetServer)
+	conn, err := grpc.Dial(targetServer, grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)))
+	if err != nil {
+		return fmt.Errorf("fail to dial: %v", err)
+	}
+	defer conn.Close()
+
+	// prepare context
+	ctx, cancel := context.WithTimeout(context.Background(), proxyConnectionTimeout)
+	defer cancel()
+
+	// new proxy client
+	client := proxy.NewTrafficProxyClient(conn)
+
+	// get flows via stream
+	fmt.Println("getting flows via stream")
+	var req proxy.TrafficStreamingRequest
+	req.TrafficSource = new(proxy.TrafficSource)
+	req.TrafficSource.Region = f.region
+	req.TrafficSource.TrafficProvider = f.trafficProvider
+	req.TrafficSource.MapProvider = f.mapProvider
+
+	stream, err := client.GetFlowsStreaming(ctx, &req)
+	if err != nil {
+		return fmt.Errorf("GetFlowsStreaming failed, err: %v", err)
+	}
+
+	for {
+		resp, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("stream recv failed, err: %v", err)
+		}
+		//fmt.Printf("received flows from stream, got flows count: %d\n", len(resp.GetFlows().Flows))
+		out <- resp.GetFlows().Flows
+	}
+
+	return nil
 }
