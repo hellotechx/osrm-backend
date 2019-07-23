@@ -33,7 +33,7 @@ func BenchmarkGetSingleFlowEachTimeByGRPC(b *testing.B) {
 
 	// make RPC client
 	targetServer := flags.trafficProxyFlags.ip + ":" + strconv.Itoa(flags.trafficProxyFlags.port)
-	fmt.Println("connect traffic proxy " + targetServer)
+	log.Println("connect traffic proxy " + targetServer)
 	conn, err := grpc.Dial(targetServer, grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)))
 	if err != nil {
 		b.Errorf("fail to dial: %v", err)
@@ -50,7 +50,7 @@ func BenchmarkGetSingleFlowEachTimeByGRPC(b *testing.B) {
 	// test
 	startTime := time.Now()
 	defer func() {
-		fmt.Printf("Processing for getting traffic flow by GRPC takes %f seconds, loop count %d\n",
+		log.Printf("Processing for getting traffic flow by GRPC takes %f seconds, loop count %d\n",
 			time.Now().Sub(startTime).Seconds(), b.N)
 	}()
 

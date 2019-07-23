@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"strconv"
 	"time"
 
@@ -26,12 +27,12 @@ func getAllFlowsByGRPC(f trafficProxyFlags) ([]*proxy.Flow, error) {
 
 	startTime := time.Now()
 	defer func() {
-		fmt.Printf("Processing time for getting traffic flows takes %f seconds\n", time.Now().Sub(startTime).Seconds())
+		log.Printf("Processing time for getting traffic flows takes %f seconds\n", time.Now().Sub(startTime).Seconds())
 	}()
 
 	// make RPC client
 	targetServer := f.ip + ":" + strconv.Itoa(f.port)
-	fmt.Println("connect traffic proxy " + targetServer)
+	log.Println("connect traffic proxy " + targetServer)
 	conn, err := grpc.Dial(targetServer, grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)))
 	if err != nil {
 		return nil, fmt.Errorf("fail to dial: %v", err)
@@ -59,7 +60,7 @@ func getAllFlowsByGRPC(f trafficProxyFlags) ([]*proxy.Flow, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetFlows failed, err: %v", err)
 	}
-	fmt.Printf("GetFlows succeed, code: %d, msg: %s, got flows count: %d\n",
+	log.Printf("GetFlows succeed, code: %d, msg: %s, got flows count: %d\n",
 		resp.GetCode(), resp.GetMsg(), len(resp.GetFlows().Flows))
 
 	return resp.GetFlows().Flows, nil
@@ -70,7 +71,7 @@ func getFlowsByGRPCStreaming(f trafficProxyFlags, out chan<- []*proxy.Flow) erro
 
 	// make RPC client
 	targetServer := f.ip + ":" + strconv.Itoa(f.port)
-	fmt.Println("connect traffic proxy " + targetServer)
+	log.Println("connect traffic proxy " + targetServer)
 	conn, err := grpc.Dial(targetServer, grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)))
 	if err != nil {
 		return fmt.Errorf("fail to dial: %v", err)
@@ -84,7 +85,7 @@ func getFlowsByGRPCStreaming(f trafficProxyFlags, out chan<- []*proxy.Flow) erro
 	client := proxy.NewTrafficProxyClient(conn)
 
 	// get flows via stream
-	fmt.Println("getting flows via stream")
+	log.Println("getting flows via stream")
 	var req proxy.TrafficStreamingRequest
 	req.TrafficSource = new(proxy.TrafficSource)
 	req.TrafficSource.Region = f.region
