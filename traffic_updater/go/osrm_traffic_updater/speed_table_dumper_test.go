@@ -53,7 +53,7 @@ func TestGenerateSingleRecord2(t *testing.T) {
 
 func validateStatistic(ds *dumperStatistic, t *testing.T) {
 	sum := ds.Sum()
-	if (sum.wayCnt != 4) || (sum.nodeCnt != 9) || (sum.fwdRecordCnt != 4) || (sum.bwdRecordCnt != 3) || (sum.wayMatchedCnt != 4) || (sum.nodeMatchedCnt != 9) {
+	if (sum.wayCnt != 4) || (sum.nodeCnt != 9) || (sum.fwdRecordCnt != 3) || (sum.bwdRecordCnt != 2) || (sum.wayMatchedCnt != 4) || (sum.nodeMatchedCnt != 9) {
 		t.Error("TestLoadWay2Nodeids failed with incorrect statistic.\n")
 	}
 }

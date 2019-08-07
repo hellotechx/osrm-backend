@@ -82,25 +82,22 @@ func task(wayid2speed map[int64]int, source <-chan string, sink chan<- string, d
 				bwdTrafficMatched += 1
 			}
 
-			for i := 0; (i + 1) < len(nodes); i++ {
-				var n1, n2 uint64
-				if n1, err = strconv.ParseUint(nodes[i], 10, 64); err != nil {
-					fmt.Printf("#Error during decoding nodeid, row = %v\n", elements)
-					continue
-				}
-				if n2, err = strconv.ParseUint(nodes[i+1], 10, 64); err != nil {
-					fmt.Printf("#Error during decoding nodeid, row = %v\n", elements)
-					continue
-				}
-				if okFwd {
-					fwdRecordCnt += 1
-					sink <- generateSingleRecord(n1, n2, speedFwd, true)
-				}
-				if okBwd {
-					bwdRecordCnt += 1
-					sink <- generateSingleRecord(n1, n2, speedBwd, false)
-				}
-
+			var n1, n2 uint64
+			if n1, err = strconv.ParseUint(nodes[0], 10, 64); err != nil {
+				fmt.Printf("#Error during decoding nodeid, row = %v\n", elements)
+				continue
+			}
+			if n2, err = strconv.ParseUint(nodes[len(nodes)-1], 10, 64); err != nil {
+				fmt.Printf("#Error during decoding nodeid, row = %v\n", elements)
+				continue
+			}
+			if okFwd {
+				fwdRecordCnt += 1
+				sink <- generateSingleRecord(n1, n2, speedFwd, true)
+			}
+			if okBwd {
+				bwdRecordCnt += 1
+				sink <- generateSingleRecord(n1, n2, speedBwd, false)
 			}
 		}
 	}
