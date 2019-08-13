@@ -1,14 +1,40 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-option java_package = "com.telenav.traffic.grpc.proto";
-option java_outer_classname = "TrafficProxy";
-
 package proxy;
 
-service TrafficProxy {
-  rpc GetFlows(TrafficRequest) returns (TrafficResponse) {}
-  rpc GetFlowsStreaming(TrafficStreamingRequest) returns (stream TrafficStreamingResponse) {}
+service TrafficService {
+  rpc GetTrafficData(TrafficRequest) returns (stream TrafficResponse) {}
+}
+
+message TrafficRequest {
+  TrafficSource trafficSource = 1;
+  repeated TrafficType trafficType = 2;
+  
+  oneof request_oneof {
+    TrafficAllRequest trafficAllRequest = 3;
+    TrafficWayIdsRequest trafficWayIdsRequest = 4;
+    TrafficStreamingRequest trafficStreamingRequest = 5;
+  }
+}
+
+message TrafficAllRequest {}
+
+message TrafficWayIdsRequest {
+  repeated sint64 wayIds = 1;
+}
+
+message TrafficStreamingRequest {
+  message StreamingRule {
+    // send flows by streaming when flow_count >= maxSize or not_send_time_interval >= maxTime seconds
+    int32 maxSize = 1;    
+    int32 maxTime = 2;    // unit: seconds
+  }
+  StreamingRule streamingRule = 1;
+}
+
+message TrafficResponse {
+  repeated FlowResponse flowResponses = 1;
+  repeated IncidentResponse incidentResponses = 2;
 }
 
 message TrafficSource {
@@ -17,58 +43,82 @@ message TrafficSource {
   string mapProvider = 3;
 }
 
-message WayIdsStructure {
-  repeated sint64 wayIds = 1;
+enum TrafficType {
+  FLOW = 0;
+  INCIDENT = 1;
+}
+
+message FlowResponse {
+  Flow flow = 1;
+  Action action = 2;
 }
 
 message Flow {
   sint64 wayId = 1;
   float speed = 2;
-  int32 trafficLevel = 3;
+  TrafficLevel trafficLevel = 3;
 }
 
-message FlowsStructure {
-  repeated Flow flows = 1;
+enum TrafficLevel {
+  NO_LEVELS = 0;
+  CLOSED = 1;
+  CONGESTED = 3;
+  SLOW_SPEED = 5;
+  FREE_FLOW = 7;
+  UNKNOWN = 10;
 }
 
-
-
-message TrafficRequest {
-  TrafficSource trafficSource = 1;
-
-  oneof WayIdFields {
-    bool all = 2;               // get all flows
-    sint64 wayId = 3;           // get flow by wayId
-    WayIdsStructure wayIds = 4; // get flows by wayIds
-  }
+enum Action {
+  ADD = 0;
+  UPDATE = 1;
+  DELETE = 2;
 }
 
-message TrafficResponse {
-  int32 code = 1;   // error code, 0 means succeed
-  string msg = 2;   // error message
-
-  oneof FlowFields{
-    Flow flow = 3;            // return single flow
-    FlowsStructure flows = 4; // return flows
-  }
+message IncidentResponse {
+  Incident incident = 1;
+  Action action = 2;
 }
 
-
-message TrafficStreamingRequest {
-  TrafficSource trafficSource = 1;
-
-  message StreamingRules {
-    // send flows by streaming when flow_count >= maxSize or not_send_time_interval >= maxTime seconds
-    int32 maxSize = 1;    
-    int32 maxTime = 2;    // unit: seconds
-  }
-  StreamingRules streamingRules = 2;
+message Incident {
+  string incidentId = 1;
+  repeated sint64 affectedWayIds = 2;
+  IncidentType incidentType = 3;
+  IncidentSeverity incidentSeverity = 4;
+  Location incidentLocation = 5;
+  string description = 6;
+  string firstCrossStreet = 7;
+  string secondCrossStreet = 8;
+  string streetName = 9;
+  int32 eventCode = 10;
+  int32 alertCEventQuantifier = 11;
+  bool isBlocking = 12;
 }
 
-message TrafficStreamingResponse {
-    FlowsStructure flows = 1; 
+enum IncidentType {
+  ACCIDENT = 0;
+  CONGESTION = 1;
+  CONSTRUCTION = 2;
+  DISABLED_VEHICLE = 3;
+  EVENT = 4;
+  MISCELLANEOUS = 5;
+  PLANNED_EVENT = 6;
+  ROAD_HAZARD = 7;
+  SCHEDULED_CONSTRUCTION = 8;
+  WEATHER = 9;
+  POLICE = 10;
+  ROAD_CLOSURE = 11;
+  ROAD_CONTRACTION = 12;
 }
 
+enum IncidentSeverity {
+  BLOCKER = 0;
+  CRITICAL = 1;
+  MAJOR = 2;
+  MINOR = 3;
+  LOW_IMPACT = 4;
+}
 
-
-
+message Location {
+  double lat = 1;
+  double lon = 2;
+}
