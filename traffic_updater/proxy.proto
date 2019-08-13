@@ -13,17 +13,17 @@ message TrafficRequest {
   oneof request_oneof {
     TrafficAllRequest trafficAllRequest = 3;
     TrafficWayIdsRequest trafficWayIdsRequest = 4;
-    TrafficStreamingRequest trafficStreamingRequest = 5;
+    TrafficStreamingDeltaRequest trafficStreamingDeltaRequest = 5;
   }
 }
 
 message TrafficAllRequest {}
 
 message TrafficWayIdsRequest {
-  repeated sint64 wayIds = 1;
+  repeated sint64 wayIds = 1; // positive means forward, negative means backward
 }
 
-message TrafficStreamingRequest {
+message TrafficStreamingDeltaRequest {
   message StreamingRule {
     // send flows by streaming when flow_count >= maxSize or not_send_time_interval >= maxTime seconds
     int32 maxSize = 1;    
@@ -54,8 +54,8 @@ message FlowResponse {
 }
 
 message Flow {
-  sint64 wayId = 1;
-  float speed = 2;
+  sint64 wayId = 1; // positive means forward, negative means backward
+  float speed = 2;  // always >= 0
   TrafficLevel trafficLevel = 3;
 }
 
@@ -80,8 +80,8 @@ message IncidentResponse {
 }
 
 message Incident {
-  string incidentId = 1;
-  repeated sint64 affectedWayIds = 2;
+  string incidentId = 1;  // unique id of this incident
+  repeated sint64 affectedWayIds = 2; // positive means forward, negative means backward
   IncidentType incidentType = 3;
   IncidentSeverity incidentSeverity = 4;
   Location incidentLocation = 5;
