@@ -11,6 +11,11 @@ import (
 )
 
 func saveTrafficDataFromGRPC(targetPath string, trafficData proxy.TrafficResponse) {
+	startTime := time.Now()
+	defer func() {
+		log.Printf("saveTrafficDataFromGRPC to file %s takes %f seconds\n", targetPath, time.Now().Sub(startTime).Seconds())
+	}()
+
 	outfile, err := os.OpenFile(targetPath, os.O_RDWR|os.O_CREATE, 0755)
 	defer outfile.Close()
 	defer outfile.Sync()
@@ -24,14 +29,14 @@ func saveTrafficDataFromGRPC(targetPath string, trafficData proxy.TrafficRespons
 	w := bufio.NewWriter(outfile)
 	defer w.Flush()
 	for _, flow := range trafficData.FlowResponses {
-		_, err := w.WriteString(flow.String())
+		_, err := w.WriteString(flow.String() + "\n")
 		if err != nil {
 			log.Fatal(err)
 			return
 		}
 	}
 	for _, incident := range trafficData.IncidentResponses {
-		_, err := w.WriteString(incident.String())
+		_, err := w.WriteString(incident.String() + "\n")
 		if err != nil {
 			log.Fatal(err)
 			return
