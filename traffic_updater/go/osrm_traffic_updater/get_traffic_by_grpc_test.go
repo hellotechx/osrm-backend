@@ -62,7 +62,7 @@ func TestGetAllTrafficDataByGRPC(t *testing.T) {
 	quickViewFlows(trafficData.FlowResponses, 10)         //quick view first 10 lines
 	quickViewIncidents(trafficData.IncidentResponses, 10) //quick view first 10 lines
 
-	saveTrafficDataFromGRPC("alltrafficdata.csv", *trafficData)
+	saveTrafficDataFromGRPC("dump_alltrafficdata", *trafficData)
 }
 
 func TestGetTrafficDataForWaysByGRPC(t *testing.T) {
@@ -141,7 +141,7 @@ func TestGetDeltaTrafficDataByGRPCStreaming(t *testing.T) {
 			minIncidentsCount = 0
 			startTime = time.Now()
 
-			saveTrafficDataFromGRPC("deltatrafficdata_"+strconv.Itoa(intervalIndex), currentIntervalTrafficData)
+			saveTrafficDataFromGRPC("dump_deltatrafficdata_"+strconv.Itoa(intervalIndex), currentIntervalTrafficData)
 
 			intervalIndex++
 			currentIntervalTrafficData.FlowResponses = nil
