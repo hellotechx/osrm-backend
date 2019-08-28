@@ -67,7 +67,9 @@ func getTrafficFlowsIncidentsByGRPC(f trafficProxyFlags, wayIds []int64) (*proxy
 		trafficWayIdsRequest.TrafficWayIdsRequest.WayIds = wayIds
 		req.RequestOneof = &trafficWayIdsRequest
 	} else {
-		req.RequestOneof = new(proxy.TrafficRequest_TrafficAllRequest)
+		trafficAllRequest := new(proxy.TrafficRequest_TrafficAllRequest)
+		trafficAllRequest.TrafficAllRequest = new(proxy.TrafficAllRequest)
+		req.RequestOneof = trafficAllRequest
 	}
 
 	stream, err := client.GetTrafficData(ctx, &req)
