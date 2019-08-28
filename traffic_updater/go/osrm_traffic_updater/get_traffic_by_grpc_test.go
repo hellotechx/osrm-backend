@@ -1,117 +1,100 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"log"
-	"strconv"
 	"testing"
 	"time"
 
 	"github.com/Telenav/osrm-backend/traffic_updater/go/grpc/proxy"
-	"google.golang.org/grpc"
 )
 
-func BenchmarkGetAllFlowsByGRPC(b *testing.B) {
+func BenchmarkGetAllTrafficDataByGRPC(b *testing.B) {
 	if testing.Short() {
 		b.Skip("skipping test in short mode.")
 	}
 
 	for i := 0; i < b.N; i++ {
-		flows, err := getAllFlowsByGRPC(flags.trafficProxyFlags)
+		trafficData, err := getTrafficFlowsIncidentsByGRPC(flags.trafficProxyFlags, nil)
 		if err != nil {
 			b.Error(err)
 		}
-		quickViewFlows(flows, 10) //quick view first 10 lines
+		quickViewFlows(trafficData.FlowResponses, 10)         //quick view first 10 lines
+		quickViewIncidents(trafficData.IncidentResponses, 10) //quick view first 10 lines
 	}
 }
 
-func BenchmarkGetSingleFlowEachTimeByGRPC(b *testing.B) {
-	if testing.Short() {
-		b.Skip("skipping test in short mode.")
-	}
-
-	// make RPC client
-	targetServer := flags.trafficProxyFlags.ip + ":" + strconv.Itoa(flags.trafficProxyFlags.port)
-	log.Println("connect traffic proxy " + targetServer)
-	conn, err := grpc.Dial(targetServer, grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)))
-	if err != nil {
-		b.Errorf("fail to dial: %v", err)
-	}
-	defer conn.Close()
-
-	// prepare context
-	ctx, cancel := context.WithTimeout(context.Background(), proxyConnectionTimeout)
-	defer cancel()
-
-	// new proxy client
-	client := proxy.NewTrafficProxyClient(conn)
-
-	// test
-	startTime := time.Now()
-	defer func() {
-		log.Printf("Processing for getting traffic flow by GRPC takes %f seconds, loop count %d\n",
-			time.Now().Sub(startTime).Seconds(), b.N)
-	}()
-
-	var req proxy.TrafficRequest
-	req.TrafficSource = new(proxy.TrafficSource)
-	req.TrafficSource.Region = flags.trafficProxyFlags.region
-	req.TrafficSource.TrafficProvider = flags.trafficProxyFlags.trafficProvider
-	req.TrafficSource.MapProvider = flags.trafficProxyFlags.mapProvider
-	way := new(proxy.TrafficRequest_WayId)
-	way.WayId = 753683232
-	req.WayIdFields = way
-	for i := 0; i < b.N; i++ {
-		resp, err := client.GetFlows(ctx, &req)
-		if err != nil {
-			b.Errorf("GetFlows failed, err: %v.\n", err)
-		}
-		if i == 0 { // print once
-			fmt.Println(resp.GetFlow())
-		}
-	}
-}
-
-func TestGetFlowsByGRPCStreaming(t *testing.T) {
+func TestGetTrafficDataForWaysByGRPC(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
 
-	flowsChan := make(chan []*proxy.Flow)
+	var wayIds []int64
+	wayIds = append(wayIds, 829733412, 104489539)
+
+	trafficData, err := getTrafficFlowsIncidentsByGRPC(flags.trafficProxyFlags, wayIds)
+	if err != nil {
+		t.Error(err)
+	}
+	quickViewFlows(trafficData.FlowResponses, 10)         //quick view first 10 lines
+	quickViewIncidents(trafficData.IncidentResponses, 10) //quick view first 10 lines
+}
+
+func TestGetDeltaTrafficDataByGRPCStreaming(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	trafficDataChan := make(chan proxy.TrafficResponse)
 
 	go func() {
-		err := getFlowsByGRPCStreaming(flags.trafficProxyFlags, flowsChan)
+		err := getDeltaTrafficFlowsIncidentsByGRPCStreaming(flags.trafficProxyFlags, trafficDataChan)
 		if err != nil {
-			t.Errorf("getFlowsByGRPCStreaming failed, err: %v", err)
+			t.Errorf("getDeltaTrafficFlowsIncidentsByGRPCStreaming failed, err: %v", err)
 		}
 	}()
 
 	startTime := time.Now()
 	statisticsInterval := 120 //120 seconds
 	var totalFlowsCount, maxFlowsCount, minFlowsCount int64
+	var totalIncidentsCount, maxIncidentsCount, minIncidentsCount int64
 	var recvCount int
-	for flows := range flowsChan {
+	for trafficData := range trafficDataChan {
 		recvCount++
 
-		currFlowsCount := int64(len(flows))
+		currFlowsCount := int64(len(trafficData.FlowResponses))
 		totalFlowsCount += currFlowsCount
 		if currFlowsCount > maxFlowsCount {
 			maxFlowsCount = currFlowsCount
 		}
-		if currFlowsCount < minFlowsCount {
+		if minFlowsCount == 0 || currFlowsCount < minFlowsCount {
 			minFlowsCount = currFlowsCount
+		}
+
+		currIncidentsCount := int64(len(trafficData.IncidentResponses))
+		totalIncidentsCount += currFlowsCount
+		if currIncidentsCount > maxIncidentsCount {
+			maxIncidentsCount = currIncidentsCount
+		}
+		if minIncidentsCount == 0 || currIncidentsCount < minIncidentsCount {
+			minIncidentsCount = currIncidentsCount
 		}
 
 		if time.Now().Sub(startTime).Seconds() >= float64(statisticsInterval) {
 			log.Printf("received flows from grpc streaming in %f seconds, recv count %d, total got flows count: %d, max per recv: %d, min per recv: %d\n",
 				time.Now().Sub(startTime).Seconds(), recvCount, totalFlowsCount, maxFlowsCount, minFlowsCount)
-			quickViewFlows(flows, 5)
+			log.Printf("received incidents from grpc streaming in %f seconds, recv count %d, total got incidents count: %d, max per recv: %d, min per recv: %d\n",
+				time.Now().Sub(startTime).Seconds(), recvCount, totalIncidentsCount, maxIncidentsCount, minIncidentsCount)
+
+			quickViewFlows(trafficData.FlowResponses, 5)
+			quickViewIncidents(trafficData.IncidentResponses, 5)
 
 			recvCount = 0
 			totalFlowsCount = 0
 			maxFlowsCount = 0
 			minFlowsCount = 0
+			totalIncidentsCount = 0
+			maxIncidentsCount = 0
+			minIncidentsCount = 0
 			startTime = time.Now()
 		}
 	}

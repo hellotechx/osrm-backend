@@ -17,22 +17,29 @@ const (
 	maxMsgSize             = 1024 * 1024 * 1024
 )
 
-func quickViewFlows(flows []*proxy.Flow, viewCount int) {
+func quickViewFlows(flows []*proxy.FlowResponse, viewCount int) {
 	for i := 0; i < viewCount && i < len(flows); i++ {
-		fmt.Println(flows[i])
+		log.Printf("--->quickViewFlows %d: %v\n", i, flows[i])
+	}
+}
+func quickViewIncidents(incidents []*proxy.IncidentResponse, viewCount int) {
+	for i := 0; i < viewCount && i < len(incidents); i++ {
+		log.Printf("--->quickViewIncidents %d: %v\n", i, incidents[i])
 	}
 }
 
-func getAllFlowsByGRPC(f trafficProxyFlags) ([]*proxy.Flow, error) {
+func getTrafficFlowsIncidentsByGRPC(f trafficProxyFlags, wayIds []int64) (*proxy.TrafficResponse, error) {
+	var outTrafficResponse proxy.TrafficResponse
 
 	startTime := time.Now()
 	defer func() {
-		log.Printf("Processing time for getting traffic flows takes %f seconds\n", time.Now().Sub(startTime).Seconds())
+		log.Printf("Processing time for getting traffic flows,incidents(%d,%d) for %d wayIds takes %f seconds\n",
+			len(outTrafficResponse.FlowResponses), len(outTrafficResponse.IncidentResponses), len(wayIds), time.Now().Sub(startTime).Seconds())
 	}()
 
 	// make RPC client
 	targetServer := f.ip + ":" + strconv.Itoa(f.port)
-	log.Println("connect traffic proxy " + targetServer)
+	log.Println("dialing traffic proxy " + targetServer)
 	conn, err := grpc.Dial(targetServer, grpc.WithInsecure(), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)))
 	if err != nil {
 		return nil, fmt.Errorf("fail to dial: %v", err)
@@ -44,29 +51,47 @@ func getAllFlowsByGRPC(f trafficProxyFlags) ([]*proxy.Flow, error) {
 	defer cancel()
 
 	// new proxy client
-	client := proxy.NewTrafficProxyClient(conn)
+	client := proxy.NewTrafficServiceClient(conn)
 
 	// get flows
-	fmt.Println("getting flows")
+	log.Printf("getting flows,incidents for %d wayIds\n", len(wayIds))
 	var req proxy.TrafficRequest
 	req.TrafficSource = new(proxy.TrafficSource)
 	req.TrafficSource.Region = f.region
 	req.TrafficSource.TrafficProvider = f.trafficProvider
 	req.TrafficSource.MapProvider = f.mapProvider
-	ways := new(proxy.TrafficRequest_All)
-	ways.All = true
-	req.WayIdFields = ways
-	resp, err := client.GetFlows(ctx, &req)
-	if err != nil {
-		return nil, fmt.Errorf("GetFlows failed, err: %v", err)
+	req.TrafficType = append(req.TrafficType, proxy.TrafficType_FLOW, proxy.TrafficType_INCIDENT)
+	if len(wayIds) > 0 {
+		var trafficWayIdsRequest proxy.TrafficRequest_TrafficWayIdsRequest
+		trafficWayIdsRequest.TrafficWayIdsRequest = new(proxy.TrafficWayIdsRequest)
+		trafficWayIdsRequest.TrafficWayIdsRequest.WayIds = wayIds
+		req.RequestOneof = &trafficWayIdsRequest
+	} else {
+		req.RequestOneof = new(proxy.TrafficRequest_TrafficAllRequest)
 	}
-	log.Printf("GetFlows succeed, code: %d, msg: %s, got flows count: %d\n",
-		resp.GetCode(), resp.GetMsg(), len(resp.GetFlows().Flows))
 
-	return resp.GetFlows().Flows, nil
+	stream, err := client.GetTrafficData(ctx, &req)
+	if err != nil {
+		return nil, fmt.Errorf("GetTrafficData failed, err: %v", err)
+	}
+
+	for {
+		resp, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("stream recv failed, err: %v", err)
+		}
+		log.Printf("received traffic data from stream, got flows count: %d, incidents count: %d\n", len(resp.FlowResponses), len(resp.IncidentResponses))
+		outTrafficResponse.FlowResponses = append(outTrafficResponse.FlowResponses, resp.FlowResponses...)
+		outTrafficResponse.IncidentResponses = append(outTrafficResponse.IncidentResponses, resp.IncidentResponses...)
+	}
+
+	return &outTrafficResponse, nil
 }
 
-func getFlowsByGRPCStreaming(f trafficProxyFlags, out chan<- []*proxy.Flow) error {
+func getDeltaTrafficFlowsIncidentsByGRPCStreaming(f trafficProxyFlags, out chan<- proxy.TrafficResponse) error {
 	defer close(out)
 
 	// make RPC client
@@ -82,22 +107,25 @@ func getFlowsByGRPCStreaming(f trafficProxyFlags, out chan<- []*proxy.Flow) erro
 	ctx := context.Background()
 
 	// new proxy client
-	client := proxy.NewTrafficProxyClient(conn)
+	client := proxy.NewTrafficServiceClient(conn)
 
 	// get flows via stream
-	log.Println("getting flows via stream")
-	var req proxy.TrafficStreamingRequest
+	log.Println("getting delta traffic flows,incidents via stream")
+	var req proxy.TrafficRequest
 	req.TrafficSource = new(proxy.TrafficSource)
 	req.TrafficSource.Region = f.region
 	req.TrafficSource.TrafficProvider = f.trafficProvider
 	req.TrafficSource.MapProvider = f.mapProvider
-	req.StreamingRules = new(proxy.TrafficStreamingRequest_StreamingRules)
-	req.StreamingRules.MaxSize = 1000
-	req.StreamingRules.MaxTime = 1
+	req.TrafficType = append(req.TrafficType, proxy.TrafficType_FLOW, proxy.TrafficType_INCIDENT)
+	trafficDeltaStreamRequest := new(proxy.TrafficRequest_TrafficStreamingDeltaRequest)
+	trafficDeltaStreamRequest.TrafficStreamingDeltaRequest = new(proxy.TrafficStreamingDeltaRequest)
+	trafficDeltaStreamRequest.TrafficStreamingDeltaRequest.StreamingRule.MaxSize = 1000
+	trafficDeltaStreamRequest.TrafficStreamingDeltaRequest.StreamingRule.MaxTime = 5
+	req.RequestOneof = trafficDeltaStreamRequest
 
-	stream, err := client.GetFlowsStreaming(ctx, &req)
+	stream, err := client.GetTrafficData(ctx, &req)
 	if err != nil {
-		return fmt.Errorf("GetFlowsStreaming failed, err: %v", err)
+		return fmt.Errorf("GetTrafficData failed, err: %v", err)
 	}
 
 	for {
@@ -108,8 +136,8 @@ func getFlowsByGRPCStreaming(f trafficProxyFlags, out chan<- []*proxy.Flow) erro
 		if err != nil {
 			return fmt.Errorf("stream recv failed, err: %v", err)
 		}
-		//fmt.Printf("received flows from stream, got flows count: %d\n", len(resp.GetFlows().Flows))
-		out <- resp.GetFlows().Flows
+		log.Printf("received traffic data from stream, got flows count: %d, incidents count: %d\n", len(resp.FlowResponses), len(resp.IncidentResponses))
+		out <- *resp
 	}
 
 	return nil
