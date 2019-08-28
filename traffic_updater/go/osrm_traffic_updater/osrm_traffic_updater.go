@@ -27,7 +27,6 @@ func init() {
 	flag.StringVar(&flags.trafficProxyFlags.region, "region", "na", "region")
 	flag.StringVar(&flags.trafficProxyFlags.trafficProvider, "traffic", "", "traffic data provider")
 	flag.StringVar(&flags.trafficProxyFlags.mapProvider, "map", "", "map data provider")
-	flag.StringVar(&flags.testMode, "testmode", "", "test mode, e.g. grpc_get_all, ut_grpc_get_way")
 	flag.StringVar(&flags.mappingFile, "m", "wayid2nodeids.csv", "OSRM way id to node ids mapping table")
 	flag.StringVar(&flags.csvFile, "f", "traffic.csv", "OSRM traffic csv file")
 }
@@ -43,21 +42,6 @@ func main() {
 		endTime := time.Now()
 		fmt.Printf("Total processing time %f seconds\n", endTime.Sub(startTime).Seconds())
 	}()
-
-	if flags.testMode != "" {
-
-		flows, err := getAllFlowsByGRPC(flags.trafficProxyFlags)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		for i := 0; i < 10 && i < len(flows); i++ {
-			fmt.Println(flows[i])
-		}
-
-		// if test mode, always return after test run
-		return
-	}
 
 	isFlowDoneChan := make(chan bool, 1)
 	wayid2speed := make(map[int64]int)
