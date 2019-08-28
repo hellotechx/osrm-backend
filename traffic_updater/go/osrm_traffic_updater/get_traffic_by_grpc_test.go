@@ -8,19 +8,17 @@ import (
 	"github.com/Telenav/osrm-backend/traffic_updater/go/grpc/proxy"
 )
 
-func BenchmarkGetAllTrafficDataByGRPC(b *testing.B) {
+func TestGetAllTrafficDataByGRPC(t *testing.T) {
 	if testing.Short() {
-		b.Skip("skipping test in short mode.")
+		t.Skip("skipping test in short mode.")
 	}
 
-	for i := 0; i < b.N; i++ {
-		trafficData, err := getTrafficFlowsIncidentsByGRPC(flags.trafficProxyFlags, nil)
-		if err != nil {
-			b.Error(err)
-		}
-		quickViewFlows(trafficData.FlowResponses, 10)         //quick view first 10 lines
-		quickViewIncidents(trafficData.IncidentResponses, 10) //quick view first 10 lines
+	trafficData, err := getTrafficFlowsIncidentsByGRPC(flags.trafficProxyFlags, nil)
+	if err != nil {
+		t.Error(err)
 	}
+	quickViewFlows(trafficData.FlowResponses, 10)         //quick view first 10 lines
+	quickViewIncidents(trafficData.IncidentResponses, 10) //quick view first 10 lines
 }
 
 func TestGetTrafficDataForWaysByGRPC(t *testing.T) {
