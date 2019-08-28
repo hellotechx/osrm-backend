@@ -85,7 +85,7 @@ func getTrafficFlowsIncidentsByGRPC(f trafficProxyFlags, wayIds []int64) (*proxy
 		if err != nil {
 			return nil, fmt.Errorf("stream recv failed, err: %v", err)
 		}
-		log.Printf("received traffic data from stream, got flows count: %d, incidents count: %d\n", len(resp.FlowResponses), len(resp.IncidentResponses))
+		log.Printf("[VERBOSE] received traffic data from stream, got flows count: %d, incidents count: %d\n", len(resp.FlowResponses), len(resp.IncidentResponses))
 		outTrafficResponse.FlowResponses = append(outTrafficResponse.FlowResponses, resp.FlowResponses...)
 		outTrafficResponse.IncidentResponses = append(outTrafficResponse.IncidentResponses, resp.IncidentResponses...)
 	}
@@ -139,7 +139,7 @@ func getDeltaTrafficFlowsIncidentsByGRPCStreaming(f trafficProxyFlags, out chan<
 		if err != nil {
 			return fmt.Errorf("stream recv failed, err: %v", err)
 		}
-		log.Printf("received traffic data from stream, got flows count: %d, incidents count: %d\n", len(resp.FlowResponses), len(resp.IncidentResponses))
+		log.Printf("[VERBOSE] received traffic data from stream, got flows count: %d, incidents count: %d\n", len(resp.FlowResponses), len(resp.IncidentResponses))
 		out <- *resp
 	}
 
