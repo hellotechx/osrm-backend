@@ -16,6 +16,11 @@ func saveTrafficDataFromGRPC(targetPath string, trafficData proxy.TrafficRespons
 		log.Printf("saveTrafficDataFromGRPC to file %s takes %f seconds\n", targetPath, time.Now().Sub(startTime).Seconds())
 	}()
 
+	if err := os.RemoveAll(targetPath); err != nil {
+		log.Fatal(err)
+		return
+	}
+
 	outfile, err := os.OpenFile(targetPath, os.O_RDWR|os.O_CREATE, 0755)
 	defer outfile.Close()
 	defer outfile.Sync()
