@@ -42,8 +42,6 @@ func saveTrafficDataFromGRPC(targetPath string, trafficData proxy.TrafficRespons
 			return
 		}
 	}
-
-	dumpFinishedWg.Done()
 }
 
 func TestGetAllTrafficDataByGRPC(t *testing.T) {
