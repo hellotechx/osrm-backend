@@ -22,7 +22,7 @@ var flags struct {
 }
 
 func init() {
-	flag.IntVar(&flags.trafficProxyFlags.port, "p", 6666, "traffic proxy listening port")
+	flag.IntVar(&flags.trafficProxyFlags.port, "p", 10086, "traffic proxy listening port")
 	flag.StringVar(&flags.trafficProxyFlags.ip, "c", "127.0.0.1", "traffic proxy ip address")
 	flag.StringVar(&flags.trafficProxyFlags.region, "region", "na", "region")
 	flag.StringVar(&flags.trafficProxyFlags.trafficProvider, "traffic", "", "traffic data provider")
