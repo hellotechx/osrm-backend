@@ -121,6 +121,7 @@ func getDeltaTrafficFlowsIncidentsByGRPCStreaming(f trafficProxyFlags, out chan<
 	req.TrafficType = append(req.TrafficType, proxy.TrafficType_FLOW, proxy.TrafficType_INCIDENT)
 	trafficDeltaStreamRequest := new(proxy.TrafficRequest_TrafficStreamingDeltaRequest)
 	trafficDeltaStreamRequest.TrafficStreamingDeltaRequest = new(proxy.TrafficStreamingDeltaRequest)
+	trafficDeltaStreamRequest.TrafficStreamingDeltaRequest.StreamingRule = new(proxy.TrafficStreamingDeltaRequest_StreamingRule)
 	trafficDeltaStreamRequest.TrafficStreamingDeltaRequest.StreamingRule.MaxSize = 1000
 	trafficDeltaStreamRequest.TrafficStreamingDeltaRequest.StreamingRule.MaxTime = 5
 	req.RequestOneof = trafficDeltaStreamRequest
