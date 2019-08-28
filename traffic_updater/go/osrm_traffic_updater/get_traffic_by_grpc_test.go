@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"log"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -140,7 +141,7 @@ func TestGetDeltaTrafficDataByGRPCStreaming(t *testing.T) {
 			minIncidentsCount = 0
 			startTime = time.Now()
 
-			saveTrafficDataFromGRPC("deltatrafficdata_"+string(intervalIndex), currentIntervalTrafficData)
+			saveTrafficDataFromGRPC("deltatrafficdata_"+strconv.Itoa(intervalIndex), currentIntervalTrafficData)
 
 			intervalIndex++
 			currentIntervalTrafficData.FlowResponses = nil
