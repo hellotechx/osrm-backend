@@ -1,12 +1,45 @@
 package main
 
 import (
+	"bufio"
 	"log"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/Telenav/osrm-backend/traffic_updater/go/grpc/proxy"
 )
+
+func saveTrafficDataFromGRPC(targetPath string, trafficData proxy.TrafficResponse) {
+	outfile, err := os.OpenFile(targetPath, os.O_RDWR|os.O_CREATE, 0755)
+	defer outfile.Close()
+	defer outfile.Sync()
+	if err != nil {
+		log.Fatal(err)
+		log.Printf("Open output file of %s failed.\n", targetPath)
+		return
+	}
+	log.Printf("Open output file of %s succeed.\n", targetPath)
+
+	w := bufio.NewWriter(outfile)
+	defer w.Flush()
+	for _, flow := range trafficData.FlowResponses {
+		_, err := w.WriteString(flow.String())
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+	}
+	for _, incident := range trafficData.IncidentResponses {
+		_, err := w.WriteString(incident.String())
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+	}
+
+	dumpFinishedWg.Done()
+}
 
 func TestGetAllTrafficDataByGRPC(t *testing.T) {
 	if testing.Short() {
@@ -19,6 +52,8 @@ func TestGetAllTrafficDataByGRPC(t *testing.T) {
 	}
 	quickViewFlows(trafficData.FlowResponses, 10)         //quick view first 10 lines
 	quickViewIncidents(trafficData.IncidentResponses, 10) //quick view first 10 lines
+
+	saveTrafficDataFromGRPC("alltrafficdata.csv", *trafficData)
 }
 
 func TestGetTrafficDataForWaysByGRPC(t *testing.T) {
@@ -53,6 +88,8 @@ func TestGetDeltaTrafficDataByGRPCStreaming(t *testing.T) {
 
 	startTime := time.Now()
 	statisticsInterval := 120 //120 seconds
+	intervalIndex := 0
+	var currentIntervalTrafficData proxy.TrafficResponse
 	var totalFlowsCount, maxFlowsCount, minFlowsCount int64
 	var totalIncidentsCount, maxIncidentsCount, minIncidentsCount int64
 	var recvCount int
@@ -77,14 +114,14 @@ func TestGetDeltaTrafficDataByGRPCStreaming(t *testing.T) {
 			minIncidentsCount = currIncidentsCount
 		}
 
-		if time.Now().Sub(startTime).Seconds() >= float64(statisticsInterval) {
-			log.Printf("received flows from grpc streaming in %f seconds, recv count %d, total got flows count: %d, max per recv: %d, min per recv: %d\n",
-				time.Now().Sub(startTime).Seconds(), recvCount, totalFlowsCount, maxFlowsCount, minFlowsCount)
-			log.Printf("received incidents from grpc streaming in %f seconds, recv count %d, total got incidents count: %d, max per recv: %d, min per recv: %d\n",
-				time.Now().Sub(startTime).Seconds(), recvCount, totalIncidentsCount, maxIncidentsCount, minIncidentsCount)
+		currentIntervalTrafficData.FlowResponses = append(currentIntervalTrafficData.FlowResponses, trafficData.FlowResponses...)
+		currentIntervalTrafficData.IncidentResponses = append(currentIntervalTrafficData.IncidentResponses, trafficData.IncidentResponses...)
 
-			quickViewFlows(trafficData.FlowResponses, 5)
-			quickViewIncidents(trafficData.IncidentResponses, 5)
+		if time.Now().Sub(startTime).Seconds() >= float64(statisticsInterval) {
+			log.Printf("interval %d received flows from grpc streaming in %f seconds, recv count %d, total got flows count: %d, max per recv: %d, min per recv: %d\n",
+				intervalIndex, time.Now().Sub(startTime).Seconds(), recvCount, totalFlowsCount, maxFlowsCount, minFlowsCount)
+			log.Printf("interval %d received incidents from grpc streaming in %f seconds, recv count %d, total got incidents count: %d, max per recv: %d, min per recv: %d\n",
+				intervalIndex, time.Now().Sub(startTime).Seconds(), recvCount, totalIncidentsCount, maxIncidentsCount, minIncidentsCount)
 
 			recvCount = 0
 			totalFlowsCount = 0
@@ -94,6 +131,12 @@ func TestGetDeltaTrafficDataByGRPCStreaming(t *testing.T) {
 			maxIncidentsCount = 0
 			minIncidentsCount = 0
 			startTime = time.Now()
+
+			saveTrafficDataFromGRPC("deltatrafficdata_"+string(intervalIndex), currentIntervalTrafficData)
+
+			intervalIndex++
+			currentIntervalTrafficData.FlowResponses = nil
+			currentIntervalTrafficData.IncidentResponses = nil
 		}
 	}
 }
