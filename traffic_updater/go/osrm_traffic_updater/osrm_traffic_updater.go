@@ -45,7 +45,6 @@ func main() {
 
 	isFlowDoneChan := make(chan bool, 1)
 	wayid2speed := make(map[int64]int)
-	//go getTrafficFlow(flags.trafficProxyFlags.ip, flags.trafficProxyFlags.port, wayid2speed, isFlowDoneChan)
 	go func() {
 		trafficData, err := getTrafficFlowsIncidentsByGRPC(flags.trafficProxyFlags, nil)
 		if err != nil {
