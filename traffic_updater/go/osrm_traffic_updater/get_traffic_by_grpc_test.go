@@ -69,7 +69,7 @@ func TestGetDeltaTrafficDataByGRPCStreaming(t *testing.T) {
 		}
 
 		currIncidentsCount := int64(len(trafficData.IncidentResponses))
-		totalIncidentsCount += currFlowsCount
+		totalIncidentsCount += currIncidentsCount
 		if currIncidentsCount > maxIncidentsCount {
 			maxIncidentsCount = currIncidentsCount
 		}
