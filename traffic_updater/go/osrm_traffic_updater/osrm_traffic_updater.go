@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -16,7 +17,6 @@ type trafficProxyFlags struct {
 
 var flags struct {
 	trafficProxyFlags trafficProxyFlags
-	testMode          string
 	mappingFile       string
 	csvFile           string
 }
@@ -45,7 +45,18 @@ func main() {
 
 	isFlowDoneChan := make(chan bool, 1)
 	wayid2speed := make(map[int64]int)
-	go getTrafficFlow(flags.trafficProxyFlags.ip, flags.trafficProxyFlags.port, wayid2speed, isFlowDoneChan)
+	//go getTrafficFlow(flags.trafficProxyFlags.ip, flags.trafficProxyFlags.port, wayid2speed, isFlowDoneChan)
+	go func() {
+		trafficData, err := getTrafficFlowsIncidentsByGRPC(flags.trafficProxyFlags, nil)
+		if err != nil {
+			log.Println(err)
+			isFlowDoneChan <- false
+			return
+		}
+
+		trafficData2map(*trafficData, wayid2speed)
+		isFlowDoneChan <- true
+	}()
 
 	var sources [TASKNUM]chan string
 	for i := range sources {

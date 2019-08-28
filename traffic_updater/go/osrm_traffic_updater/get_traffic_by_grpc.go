@@ -28,6 +28,29 @@ func quickViewIncidents(incidents []*proxy.IncidentResponse, viewCount int) {
 	}
 }
 
+func trafficData2map(trafficData proxy.TrafficResponse, m map[int64]int) {
+	startTime := time.Now()
+	defer func() {
+		log.Printf("Processing time for building traffic map takes %f seconds\n", time.Now().Sub(startTime).Seconds())
+	}()
+
+	var fwdCnt, bwdCnt uint64
+	for _, flow := range trafficData.FlowResponses {
+		wayid := flow.Flow.WayId
+		m[wayid] = int(flow.Flow.Speed)
+
+		if wayid > 0 {
+			fwdCnt++
+		} else {
+			bwdCnt++
+		}
+	}
+
+	//TODO: support incidents
+
+	log.Printf("Load map[wayid] to speed with %d items, %d forward and %d backward.\n", (fwdCnt + bwdCnt), fwdCnt, bwdCnt)
+}
+
 func getTrafficFlowsIncidentsByGRPC(f trafficProxyFlags, wayIds []int64) (*proxy.TrafficResponse, error) {
 	var outTrafficResponse proxy.TrafficResponse
 
