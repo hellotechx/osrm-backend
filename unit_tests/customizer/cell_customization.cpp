@@ -119,6 +119,66 @@ BOOST_AUTO_TEST_CASE(two_level_test)
     CHECK_EQUAL_RANGE(cell_1_1.GetInWeight(3), 1, 0);
 }
 
+
+BOOST_AUTO_TEST_CASE(two_level_test2)
+{
+    // 0 --- 1
+    // |     |
+    // 2 --- 3
+    // node:                0  1  2  3
+    std::vector<CellID> l1{{0, 0, 1, 1}};
+    MultiLevelPartition mlp{{l1}, {2}};
+
+    BOOST_REQUIRE_EQUAL(mlp.GetNumberOfLevels(), 2);
+
+    std::vector<MockEdge> edges = {{0, 1, 1}, {0, 2, 1}, {2, 3, 1}, {3, 1, 1}, {3, 2, 1}};
+
+    auto graph = makeGraph(mlp, edges);
+    std::vector<bool> node_filter(graph.GetNumberOfNodes(), true);
+
+    CellStorage storage(mlp, graph);
+    auto metric = storage.MakeMetric();
+    CellCustomizer customizer(mlp);
+    CellCustomizer::Heap heap(graph.GetNumberOfNodes());
+
+    auto cell_1_0 = storage.GetCell(metric, 1, 0);
+    auto cell_1_1 = storage.GetCell(metric, 1, 1);
+
+    REQUIRE_SIZE_RANGE(cell_1_0.GetSourceNodes(), 1);
+    REQUIRE_SIZE_RANGE(cell_1_0.GetDestinationNodes(), 1);
+    REQUIRE_SIZE_RANGE(cell_1_1.GetSourceNodes(), 2);
+    REQUIRE_SIZE_RANGE(cell_1_1.GetDestinationNodes(), 2);
+
+    CHECK_EQUAL_RANGE(cell_1_0.GetSourceNodes(), 0);
+    CHECK_EQUAL_RANGE(cell_1_0.GetDestinationNodes(), 1);
+    CHECK_EQUAL_RANGE(cell_1_1.GetSourceNodes(), 2, 3);
+    CHECK_EQUAL_RANGE(cell_1_1.GetDestinationNodes(), 2, 3);
+
+    REQUIRE_SIZE_RANGE(cell_1_0.GetOutWeight(0), 1);
+    REQUIRE_SIZE_RANGE(cell_1_0.GetOutWeight(1), 0);
+    REQUIRE_SIZE_RANGE(cell_1_0.GetInWeight(1), 1);
+    REQUIRE_SIZE_RANGE(cell_1_0.GetInWeight(0), 0);
+    REQUIRE_SIZE_RANGE(cell_1_1.GetOutWeight(2), 2);
+    REQUIRE_SIZE_RANGE(cell_1_1.GetInWeight(3), 2);
+
+    customizer.Customize(graph, heap, storage, node_filter, metric, 1, 0);
+    customizer.Customize(graph, heap, storage, node_filter, metric, 1, 1);
+
+    // cell 0
+    // check row source -> destination
+    CHECK_EQUAL_RANGE(cell_1_0.GetOutWeight(0), 1);
+    // check column destination -> source
+    CHECK_EQUAL_RANGE(cell_1_0.GetInWeight(1), 1);
+
+    // cell 1
+    // check row source -> destination
+    CHECK_EQUAL_RANGE(cell_1_1.GetOutWeight(2), 0, 1);
+    CHECK_EQUAL_RANGE(cell_1_1.GetOutWeight(3), 1, 0);
+    // check column destination -> source
+    CHECK_EQUAL_RANGE(cell_1_1.GetInWeight(2), 0, 1);
+    CHECK_EQUAL_RANGE(cell_1_1.GetInWeight(3), 1, 0);
+}
+
 BOOST_AUTO_TEST_CASE(four_levels_test)
 {
     // node:                0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
