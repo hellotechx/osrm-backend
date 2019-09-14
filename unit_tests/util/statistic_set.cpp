@@ -4,7 +4,7 @@
 #include <boost/test/unit_test.hpp>
 #include <set>
 
-BOOST_AUTO_TEST_SUITE(node_set_test)
+BOOST_AUTO_TEST_SUITE(statistic_set_test)
 
 using namespace osrm;
 using namespace osrm::util;
@@ -102,7 +102,8 @@ BOOST_AUTO_TEST_CASE(node_set_iteration)
     {
         s.insert(iter);
     }
-    BOOST_CHECK_EQUAL(s, 10);
+    BOOST_CHECK_EQUAL(s.size(), 10);
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -343,7 +343,8 @@ BOOST_AUTO_TEST_CASE(four_levels_test)
 
     CellStorage storage_rec(mlp, graph);
     auto metric_rec = storage_rec.MakeMetric();
-    customizer.Customize(graph, storage_rec, node_filter, metric_rec);
+    CellUpdateRecord cell_update_record(mlp);
+    customizer.Customize(graph, storage_rec, node_filter, metric_rec, cell_update_record);
 
     CHECK_EQUAL_COLLECTIONS(cell_2_1.GetOutWeight(9),
                             storage_rec.GetCell(metric_rec, 2, 1).GetOutWeight(9));
@@ -384,7 +385,8 @@ BOOST_AUTO_TEST_CASE(exclude_test)
     CellCustomizer customizer(mlp);
     CellStorage storage(mlp, graph);
     auto metric = storage.MakeMetric();
-    customizer.Customize(graph, storage, node_filter, metric);
+    CellUpdateRecord cell_update_record(mlp);
+    customizer.Customize(graph, storage, node_filter, metric, cell_update_record);
 
     auto cell_1_0 = storage.GetCell(metric, 1, 0);
     auto cell_1_1 = storage.GetCell(metric, 1, 1);

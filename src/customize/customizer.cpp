@@ -77,13 +77,14 @@ auto LoadAndUpdateEdgeExpandedGraph(const CustomizationConfig &config,
                                     std::vector<EdgeWeight> &node_weights,
                                     std::vector<EdgeDuration> &node_durations,
                                     std::vector<EdgeDistance> &node_distances,
-                                    std::uint32_t &connectivity_checksum)
+                                    std::uint32_t &connectivity_checksum,
+                                    util::StatisticSet<NodeID> &node_updated)
 {
     updater::Updater updater(config.updater_config);
 
     std::vector<extractor::EdgeBasedEdge> edge_based_edge_list;
     EdgeID num_nodes = updater.LoadAndUpdateEdgeExpandedGraph(
-        edge_based_edge_list, node_weights, node_durations, connectivity_checksum);
+        edge_based_edge_list, node_weights, node_durations, connectivity_checksum, node_updated);
 
     extractor::files::readEdgeBasedNodeDistances(config.GetPath(".osrm.enw"), node_distances);
 
@@ -101,19 +102,21 @@ auto LoadAndUpdateEdgeExpandedGraph(const CustomizationConfig &config,
 std::vector<CellMetric> customizeFilteredMetrics(const partitioner::MultiLevelEdgeBasedGraph &graph,
                                                  const partitioner::CellStorage &storage,
                                                  const CellCustomizer &customizer,
-                                                 const std::vector<std::vector<bool>> &node_filters)
+                                                 const std::vector<std::vector<bool>> &node_filters,
+                                                 const CellUpdateRecord &cell_update_record)
 {
     std::vector<CellMetric> metrics;
 
     for (auto filter : node_filters)
     {
         auto metric = storage.MakeMetric();
-        customizer.Customize(graph, storage, filter, metric);
+        customizer.Customize(graph, storage, filter, metric, cell_update_record);
         metrics.push_back(std::move(metric));
     }
 
     return metrics;
 }
+
 }
 
 int Customizer::Run(const CustomizationConfig &config)
@@ -130,12 +133,14 @@ int Customizer::Run(const CustomizationConfig &config)
     std::vector<EdgeDuration> node_durations; // TODO: remove when durations are optional
     std::vector<EdgeDistance> node_distances; // TODO: remove when distances are optional
     std::uint32_t connectivity_checksum = 0;
+    util::StatisticSet<NodeID> node_updated(true);
     auto graph = LoadAndUpdateEdgeExpandedGraph(
-        config, mlp, node_weights, node_durations, node_distances, connectivity_checksum);
+        config, mlp, node_weights, node_durations, node_distances, connectivity_checksum, node_updated);
     BOOST_ASSERT(graph.GetNumberOfNodes() == node_weights.size());
     std::for_each(node_weights.begin(), node_weights.end(), [](auto &w) { w &= 0x7fffffff; });
     util::Log() << "Loaded edge based graph: " << graph.GetNumberOfEdges() << " edges, "
                 << graph.GetNumberOfNodes() << " nodes";
+    util::Log() << node_updated.Statistic();
 
     partitioner::CellStorage storage;
     partitioner::files::readCells(config.GetPath(".osrm.cells"), storage);
@@ -150,8 +155,14 @@ int Customizer::Run(const CustomizationConfig &config)
     util::Log() << "Loading partition data took " << TIMER_SEC(loading_data) << " seconds";
 
     TIMER_START(cell_customize);
+
+    // @condition check  @todo
+    CellUpdateRecord cell_update_record(mlp);
+    cell_update_record.Collect(node_updated);
+    util::Log() << cell_update_record.Statistic();
+
     auto filter = util::excludeFlagsToNodeFilter(graph.GetNumberOfNodes(), node_data, properties);
-    auto metrics = customizeFilteredMetrics(graph, storage, CellCustomizer{mlp}, filter);
+    auto metrics = customizeFilteredMetrics(graph, storage, CellCustomizer{mlp}, filter, cell_update_record);
     TIMER_STOP(cell_customize);
     util::Log() << "Cells customization took " << TIMER_SEC(cell_customize) << " seconds";
 
