@@ -72,7 +72,7 @@ int Contractor::Run()
 
     updater::Updater updater(config.updater_config);
     std::uint32_t connectivity_checksum = 0;
-    util::StatisticSet<NodeID> node_updated(false);
+    util::ConcurrentSet<NodeID> node_updated(false);
     EdgeID number_of_edge_based_nodes = updater.LoadAndUpdateEdgeExpandedGraph(
         edge_based_edge_list, node_weights, connectivity_checksum, node_updated);
 

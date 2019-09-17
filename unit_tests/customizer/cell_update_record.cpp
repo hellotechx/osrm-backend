@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(cell_update_record_test_check)
 
     BOOST_REQUIRE_EQUAL(mlp.GetNumberOfLevels(), 3);
 
-    StatisticSet<NodeID> ss(true);
+    ConcurrentSet<NodeID> ss(true);
     ss.Add(2);
     ss.Add(3);
     CellUpdateRecord cr(mlp);
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(cell_update_record_with_cost_update)
                                    {2, 4, 1}, {3, 5, 1}, {5, 3, 1}, {4, 5, 1}};
     auto graph2 = makeGraph(mlp, edges2);
 
-    StatisticSet<NodeID> ss(true);
+    ConcurrentSet<NodeID> ss(true);
     ss.Add(2);
     ss.Add(3);
     cr.Collect(ss);
