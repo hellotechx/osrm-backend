@@ -1,26 +1,26 @@
-#include "util/statistic_set.hpp"
+#include "util/concurrent_set.hpp"
 #include "util/typedefs.hpp"
 
 #include <boost/test/unit_test.hpp>
 #include <set>
 
-BOOST_AUTO_TEST_SUITE(statistic_set_test)
+BOOST_AUTO_TEST_SUITE(concurrent_set_test)
 
 using namespace osrm;
 using namespace osrm::util;
 
-BOOST_AUTO_TEST_CASE(statistic_set_enable_func_test)
+BOOST_AUTO_TEST_CASE(concurrent_set_enable_func_test)
 {
-    StatisticSet<NodeID> ns1(false);
+    ConcurrentSet<NodeID> ns1(false);
     BOOST_CHECK(!ns1.IsEnabled());
 
-    StatisticSet<NodeID> ns2(true);
+    ConcurrentSet<NodeID> ns2(true);
     BOOST_CHECK(ns2.IsEnabled());
 }
 
 BOOST_AUTO_TEST_CASE(node_set_disable_test)
 {
-    StatisticSet<NodeID> ns;
+    ConcurrentSet<NodeID> ns;
     BOOST_CHECK(!ns.IsEnabled());
 
     ns.Add(1);
@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(node_set_disable_test)
 
 BOOST_AUTO_TEST_CASE(node_set_enable_test)
 {
-    StatisticSet<NodeID> ns(true);
+    ConcurrentSet<NodeID> ns(true);
     BOOST_CHECK(ns.IsEnabled());
 
     ns.Add(1);
@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(node_set_enable_test)
 BOOST_AUTO_TEST_CASE(node_set_percentage_test_empty_set)
 {
     // Empty set, no TotalNum set
-    StatisticSet<NodeID> ns1(true);
+    ConcurrentSet<NodeID> ns1(true);
     std::string str1 = ns1.Statistic();
     BOOST_CHECK_EQUAL(str1, "There are 0 nodes be updated.  ");
 }
@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(node_set_percentage_test_empty_set)
 BOOST_AUTO_TEST_CASE(node_set_percentage_test_none_empty_set)
 {
     // None-empty set, no TotalNum set
-    StatisticSet<NodeID> ns1(true);
+    ConcurrentSet<NodeID> ns1(true);
     ns1.Add(1);
     ns1.Add(1);
     ns1.Add(2);
@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(node_set_percentage_test_none_empty_set)
 BOOST_AUTO_TEST_CASE(node_set_percentage_test_totalnum_statistic)
 {
     // None-empty set, with TotalNum set
-    StatisticSet<NodeID> ns1(true);
+    ConcurrentSet<NodeID> ns1(true);
 
     for (int i = 0; i < 23; ++i)
     {
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(node_set_percentage_test_totalnum_statistic)
 BOOST_AUTO_TEST_CASE(node_set_percentage_test_rounding)
 {
     // None-empty set, with TotalNum set
-    StatisticSet<NodeID> ns1(true);
+    ConcurrentSet<NodeID> ns1(true);
 
     for (int i = 0; i < 37; ++i)
     {
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(node_set_percentage_test_rounding)
 
 BOOST_AUTO_TEST_CASE(node_set_iteration)
 {
-    StatisticSet<NodeID> ns1(true);
+    ConcurrentSet<NodeID> ns1(true);
     for (int i = 0; i < 10; ++i)
     {
         ns1.Add(i);

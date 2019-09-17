@@ -1,5 +1,5 @@
-#ifndef OSRM_UTIL_STATISTIC_SET_HPP
-#define OSRM_UTIL_STATISTIC_SET_HPP
+#ifndef OSRM_UTIL_CONCURRENT_SET_HPP
+#define OSRM_UTIL_CONCURRENT_SET_HPP
 
 #include "tbb/concurrent_unordered_set.h"
 
@@ -15,7 +15,7 @@ namespace util
 {
 
 template<typename T>
-class StatisticSet
+class ConcurrentSet
 {
 // https://www.threadingbuildingblocks.org/docs/help/reference/containers_overview/concurrent_unordered_set_cls.html
 using SET = tbb::concurrent_unordered_set<T>;
@@ -23,7 +23,7 @@ using ITERATOR = typename tbb::concurrent_unordered_set<T>::iterator;
 using CONST_ITERATOR = typename tbb::concurrent_unordered_set<T>::const_iterator;
 
 public:
-    StatisticSet(bool b = false)
+    ConcurrentSet(bool b = false)
     : enabled(b)
     {
         totalnum = -1;

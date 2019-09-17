@@ -2,9 +2,8 @@
 #define OSRM_CELLS_UPDATED_RECORD_HPP
 
 #include "partitioner/multi_level_partition.hpp"
-#include "util/statistic_set.hpp"
+#include "util/concurrent_set.hpp"
 
-//#include "util/statistic_set.hpp"
 
 #include <vector>
 #include <unordered_set>
@@ -26,7 +25,7 @@ public:
         s = std::move(tmp);
     }
 
-    void Collect(const util::StatisticSet<NodeID> &node_updated)
+    void Collect(const util::ConcurrentSet<NodeID> &node_updated)
     {
         init = true;
         for (auto iter : node_updated)
