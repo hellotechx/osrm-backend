@@ -133,7 +133,7 @@ int Customizer::Run(const CustomizationConfig &config)
     std::vector<EdgeDuration> node_durations; // TODO: remove when durations are optional
     std::vector<EdgeDistance> node_distances; // TODO: remove when distances are optional
     std::uint32_t connectivity_checksum = 0;
-    util::ConcurrentSet<NodeID> node_updated(true);
+    util::ConcurrentSet<NodeID> node_updated(config.updater_config.incremental);
     auto graph = LoadAndUpdateEdgeExpandedGraph(
         config, mlp, node_weights, node_durations, node_distances, connectivity_checksum, node_updated);
     BOOST_ASSERT(graph.GetNumberOfNodes() == node_weights.size());
@@ -157,7 +157,7 @@ int Customizer::Run(const CustomizationConfig &config)
     TIMER_START(cell_customize);
 
     // @condition check  @todo
-    CellUpdateRecord cell_update_record(mlp);
+    CellUpdateRecord cell_update_record(mlp, config.updater_config.incremental);
     cell_update_record.Collect(node_updated);
     util::Log() << cell_update_record.Statistic();
 

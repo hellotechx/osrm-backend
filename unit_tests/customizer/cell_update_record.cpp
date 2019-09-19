@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(cell_update_record_basic_test)
     CHECK_EQUAL_RANGE(cell_1_1.GetDestinationNodes(), 3);
 
     CellCustomizer customizer(mlp);
-    CellUpdateRecord cell_update_record(mlp);
+    CellUpdateRecord cell_update_record(mlp, false);
     customizer.Customize(graph, storage_rec, node_filter, metric_rec, cell_update_record);
 
     // verify customization result
@@ -121,15 +121,10 @@ BOOST_AUTO_TEST_CASE(cell_update_record_test_check)
     ConcurrentSet<NodeID> ss(true);
     ss.Add(2);
     ss.Add(3);
-    CellUpdateRecord cr(mlp);
+    CellUpdateRecord cr(mlp, true);
     cr.Collect(ss);
 
     BOOST_REQUIRE_EQUAL(cr.Check(1, 0), false);
-    BOOST_REQUIRE_EQUAL(cr.Check(1, 1), true);
-    BOOST_REQUIRE_EQUAL(cr.Check(2, 0), true);
-
-    cr.Clear();
-    BOOST_REQUIRE_EQUAL(cr.Check(1, 0), true);
     BOOST_REQUIRE_EQUAL(cr.Check(1, 1), true);
     BOOST_REQUIRE_EQUAL(cr.Check(2, 0), true);
 }
@@ -160,8 +155,7 @@ BOOST_AUTO_TEST_CASE(cell_update_record_with_cost_update)
     auto cell_1_1 = storage_rec.GetCell(metric_rec, 1, 1);
 
     CellCustomizer customizer(mlp);
-    CellUpdateRecord cr(mlp);
-
+    CellUpdateRecord cr(mlp, false);
     customizer.Customize(graph, storage_rec, node_filter, metric_rec, cr);
 
     // verify customization result
@@ -182,15 +176,18 @@ BOOST_AUTO_TEST_CASE(cell_update_record_with_cost_update)
     ConcurrentSet<NodeID> ss(true);
     ss.Add(2);
     ss.Add(3);
-    cr.Collect(ss);
-    customizer.Customize(graph2, storage_rec, node_filter, metric_rec, cr);
-        // verify customization result
+    CellUpdateRecord cr2(mlp, true);
+    cr2.Collect(ss);
+    customizer.Customize(graph2, storage_rec, node_filter, metric_rec, cr2);
+    // verify customization result
     CHECK_EQUAL_RANGE(cell_1_0.GetOutWeight(0), 1);
     CHECK_EQUAL_RANGE(cell_1_0.GetInWeight(1), 1);
 
     CHECK_EQUAL_RANGE(cell_1_1.GetOutWeight(2), 2);
     CHECK_EQUAL_RANGE(cell_1_1.GetOutWeight(3), 0);
     CHECK_EQUAL_RANGE(cell_1_1.GetInWeight(3), 2, 0);
+
+    BOOST_REQUIRE_EQUAL(cr2.Statistic(), "Cell Update Status(count for levels): (1,1) of (2,1) be updated.  About 66.67% in total.\n");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

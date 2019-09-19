@@ -1,6 +1,7 @@
 #ifndef OSRM_CELLS_UPDATED_RECORD_HPP
 #define OSRM_CELLS_UPDATED_RECORD_HPP
 
+#include "tbb/concurrent_unordered_set.h"
 #include "partitioner/multi_level_partition.hpp"
 #include "util/concurrent_set.hpp"
 
@@ -14,64 +15,110 @@ namespace customizer
 {
 namespace detail
 {
+
 class CellUpdateRecordImpl
 {
+//using CellIDSet = std::unordered_set<CellID>
+using CellIDSet = tbb::concurrent_unordered_set<CellID>;
+using MultiLevelCellIDSet = std::vector<CellIDSet>;
 public:
-    CellUpdateRecordImpl(const partitioner::MultiLevelPartition& mlp)
+    CellUpdateRecordImpl(const partitioner::MultiLevelPartition& mlp, bool incremental)
     : partition(mlp),
-      init(false)
+      isIncremental(incremental)
     {
-        std::vector<std::unordered_set<CellID>> tmp(partition.GetNumberOfLevels() - 1, std::unordered_set<CellID>());
-        s = std::move(tmp);
+        MultiLevelCellIDSet tmp(partition.GetNumberOfLevels() - 1, CellIDSet());
+        cellsets = std::move(tmp);
     }
 
     void Collect(const util::ConcurrentSet<NodeID> &node_updated)
     {
-        init = true;
+        if (!isIncremental)
+        {
+            return;
+        }
+
         for (auto iter : node_updated)
         {
             for (std::size_t level = 1; level < partition.GetNumberOfLevels(); ++level)
             {
-                s[level-1].insert(partition.GetCell(level, iter));
+                cellsets[level-1].insert(partition.GetCell(level, iter));
             }
         }
     }
 
     bool Check(LevelID l, CellID c) const
     {
-        // always return true in default mode
-        if (!init)
+        // always return true for none-incremental mode
+        if (!isIncremental)
         {
             return true;
         }
 
-        if (l < 1) 
+        if (l < 1 || (l - 1) >= cellsets.size()) 
         {
             printf("Incorrect level be passed.\n");
             return false;
         }
-        return (s[l-1].find(c) != s[l-1].end());
+        return (cellsets[l-1].find(c) != cellsets[l-1].end());
     }
 
     void Clear()
     {
-        for (int i = 0; i < partition.GetNumberOfLevels() - 1; ++i)
+        for (size_t i = 0; i < cellsets.size(); ++i)
         {
-            s[i].clear();
+            cellsets[i].clear();
         }
-        init = false;
     }
 
     std::string Statistic() const
     {
-        return "\n";
+        if (!isIncremental) 
+        {
+            return "Nothing has been recorded in cell_update_record.\n";
+        }
+        else
+        {
+            std::ostringstream ss;
+
+            int sumOfUpdates = 0;
+            ss << "Cell Update Status(count for levels): (";
+            for (size_t i = 0; i < cellsets.size(); ++i)
+            {
+                ss << cellsets[i].size();
+                sumOfUpdates += cellsets[i].size();
+                if (i != cellsets.size() - 1)
+                {
+                    ss << ",";
+                }
+            }
+            ss << ") ";
+
+            ss << "of (";
+            int sumOfCells = 0;
+            for (std::size_t level = 1; level < partition.GetNumberOfLevels(); ++level)
+            {
+                ss << partition.GetNumberOfCells(level);
+                sumOfCells += partition.GetNumberOfCells(level);
+                if (level != partition.GetNumberOfLevels() - 1)
+                {
+                    ss << ",";
+                }
+            }
+            ss << ") be updated.";
+
+            float percentage = (float)(sumOfUpdates * 100) / sumOfCells;
+            ss <<std::setprecision(4) << "  About " << percentage << "% in total.\n";
+
+            return ss.str();
+        }
     }
 
 private:
-    std::vector<std::unordered_set<CellID>> s;
-    const partitioner::MultiLevelPartition &partition;
-    bool init;
+    MultiLevelCellIDSet                     cellsets;
+    const partitioner::MultiLevelPartition  &partition;
+    bool                                    isIncremental;
 };
+
 }
 
 using CellUpdateRecord = detail::CellUpdateRecordImpl;

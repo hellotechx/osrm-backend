@@ -70,7 +70,10 @@ return_code parseArguments(int argc,
                 &customization_config.updater_config.tz_file_path)
                 ->default_value(""),
             "Required for conditional turn restriction parsing, provide a geojson file containing "
-            "time zone boundaries");
+            "time zone boundaries")(
+            "incremental",
+            boost::program_options::value<bool>(&customization_config.updater_config.incremental)
+            );
 
     // hidden options, will be allowed on command line, but will not be
     // shown to the user
