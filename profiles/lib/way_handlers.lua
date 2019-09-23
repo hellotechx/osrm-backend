@@ -434,8 +434,17 @@ end
 function WayHandlers.maxspeed(profile,way,result,data)
   local keys = Sequence {  'maxspeed:advisory', 'maxspeed', 'source:maxspeed', 'maxspeed:type' }
   local forward, backward = Tags.get_forward_backward_by_set(way,data,keys)
-  forward = WayHandlers.parse_maxspeed(forward,profile)
-  backward = WayHandlers.parse_maxspeed(backward,profile)
+
+  local speed_unit = Tags.get_speed_unit_by_key(way, 'speed_unit')
+  -- If speed_unit == 'M', then it's mile per hour
+  -- If speed_unit == 'K', then it's kilometer per hour
+  local adjust_speed_by_unit = 1
+  if speed_unit == 'M' then
+    adjust_speed_by_unit = 1.60934
+  end
+
+  forward = WayHandlers.parse_maxspeed(forward,profile) * adjust_speed_by_unit
+  backward = WayHandlers.parse_maxspeed(backward,profile) * adjust_speed_by_unit
 
   if forward and forward > 0 then
     result.forward_speed = forward * profile.speed_reduction
